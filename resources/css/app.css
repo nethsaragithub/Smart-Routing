@@ -1,0 +1,198 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../../app/Enums/*.php';
+
+/*
+ * SRMSS design tokens
+ * - Slate "depot" sidebar, cool paper background, white panels.
+ * - Signal red (Sri Lankan bus red) for primary actions only.
+ * - Amber-on-charcoal "destination board" for route numbers - the one
+ *   loud element, used consistently wherever a route is named.
+ */
+@theme {
+    --font-sans: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Barlow Condensed', 'Arial Narrow', ui-sans-serif, sans-serif;
+
+    --color-paper: #f3f5f4;
+    --color-panel: #ffffff;
+    --color-line: #dde3e1;
+    --color-line-strong: #c6cfcc;
+    --color-ink: #1c2730;
+    --color-ink-soft: #3d4c55;
+    --color-muted: #5f6f77;
+
+    --color-depot: #1e2b33;
+    --color-depot-raised: #273842;
+    --color-depot-line: #34464f;
+    --color-depot-text: #c9d4d8;
+
+    --color-signal: #b3261e;
+    --color-signal-dark: #8e1d17;
+    --color-signal-tint: #fbeceb;
+
+    --color-board: #22272b;
+    --color-board-amber: #ffb81c;
+
+    --radius-panel: 10px;
+}
+
+@layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+        @apply bg-paper text-ink font-sans;
+        font-size: 15px;
+        line-height: 1.55;
+        font-feature-settings: 'tnum' 0;
+    }
+
+    h1, h2, h3 {
+        @apply text-ink;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-signal);
+        outline-offset: 2px;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    /* Grid items default to min-width: auto and would stretch to fit wide
+       tables; let them shrink so tables scroll inside their own panel. */
+    main .grid > * {
+        min-width: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+@layer components {
+    /* Panels: one surface treatment, hierarchy comes from spacing and type. */
+    .panel {
+        @apply bg-panel border border-line rounded-[var(--radius-panel)];
+    }
+
+    .panel-head {
+        @apply flex items-center justify-between gap-3 px-5 py-3.5 border-b border-line;
+    }
+
+    .panel-title {
+        @apply font-display text-[1.2rem] font-semibold tracking-wide text-ink leading-tight;
+    }
+
+    /* Form controls */
+    .field-label {
+        @apply block text-sm font-medium text-ink-soft mb-1.5;
+    }
+
+    .control {
+        @apply block w-full rounded-md border-line-strong bg-white text-ink text-[15px] shadow-none
+            focus:border-ink-soft focus:ring-2 focus:ring-signal/25 disabled:bg-paper disabled:text-muted;
+    }
+
+    .control-error {
+        @apply border-signal focus:border-signal;
+    }
+
+    /* Buttons */
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold
+            transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap;
+    }
+
+    .btn-primary {
+        @apply bg-signal text-white hover:bg-signal-dark;
+    }
+
+    .btn-secondary {
+        @apply bg-white text-ink border border-line-strong hover:bg-paper;
+    }
+
+    .btn-ghost {
+        @apply text-ink-soft hover:bg-paper hover:text-ink;
+    }
+
+    .btn-danger {
+        @apply bg-white text-signal border border-signal/40 hover:bg-signal-tint;
+    }
+
+    .btn-sm {
+        @apply px-2.5 py-1.5 text-[13px];
+    }
+
+    /* Tables */
+    .data-table {
+        @apply w-full text-sm;
+    }
+
+    .data-table thead th {
+        @apply text-left font-semibold text-muted text-[13px] px-4 py-2.5 border-b border-line bg-paper/60 whitespace-nowrap;
+    }
+
+    .data-table tbody td {
+        @apply px-4 py-3 border-b border-line align-middle;
+    }
+
+    .data-table tbody tr:last-child td {
+        @apply border-b-0;
+    }
+
+    .data-table tbody tr:hover td {
+        @apply bg-paper/50;
+    }
+
+    .num {
+        @apply text-right tabular-nums;
+    }
+
+    /* The destination board route number */
+    .route-board {
+        @apply inline-flex items-center justify-center rounded-[4px] bg-board text-board-amber font-display font-bold
+            tracking-wide leading-none tabular-nums;
+        box-shadow: inset 0 0 0 1px rgb(255 184 28 / 0.18);
+        text-shadow: 0 0 6px rgb(255 184 28 / 0.35);
+    }
+
+    .nav-link {
+        @apply flex items-center gap-3 rounded-md px-3 py-2 text-[14px] text-depot-text hover:bg-depot-raised hover:text-white;
+    }
+
+    .nav-link[aria-current='page'] {
+        @apply bg-depot-raised text-white;
+        box-shadow: inset 3px 0 0 var(--color-board-amber);
+    }
+}
+
+/* Leaflet stop markers */
+.stop-marker {
+    @apply flex items-center justify-center rounded-full bg-white text-ink font-display font-bold text-[13px];
+    width: 26px;
+    height: 26px;
+    border: 3px solid var(--color-board);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+}
+
+.stop-marker.is-terminus {
+    @apply bg-board text-board-amber;
+}
+
+.leaflet-container {
+    font-family: var(--font-sans);
+    /* Keep Leaflet's high z-index panes below the sticky header and modals. */
+    isolation: isolate;
+    z-index: 0;
+}
