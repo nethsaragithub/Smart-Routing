@@ -41,7 +41,7 @@
                     <td class="whitespace-nowrap">
                         <span class="font-semibold tabular-nums">{{ $trip->scheduled_departure->format('H:i') }}</span>
                         @if ($trip->delay_minutes > 0 && $trip->status->isOpen())
-                            <span class="block text-[12.5px] text-amber-700 tabular-nums">exp. {{ $trip->expectedDeparture()->format('H:i') }}</span>
+                            <span class="block text-[12.5px] text-amber-700 dark:text-amber-300 tabular-nums">exp. {{ $trip->expectedDeparture()->format('H:i') }}</span>
                         @endif
                     </td>
                     <td>

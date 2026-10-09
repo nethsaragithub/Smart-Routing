@@ -44,7 +44,7 @@
                                         @forelse ($departures as $schedule)
                                             <a href="{{ route('schedules.show', $schedule) }}"
                                                title="{{ $schedule->departureLabel() }}–{{ $schedule->arrivalLabel() }} · {{ $schedule->bus->registration_no }} · {{ $schedule->driver->full_name }}"
-                                               class="rounded border border-line bg-white px-1.5 py-0.5 tabular-nums hover:border-ink">{{ $schedule->departureLabel() }}</a>
+                                               class="rounded border border-line bg-panel px-1.5 py-0.5 tabular-nums hover:border-ink">{{ $schedule->departureLabel() }}</a>
                                         @empty
                                             <span class="px-1.5 text-muted">–</span>
                                         @endforelse

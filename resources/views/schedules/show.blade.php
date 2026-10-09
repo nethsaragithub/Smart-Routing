@@ -25,7 +25,7 @@
     </x-page-header>
 
     @if (! $report->isClear() && $schedule->status === \App\Enums\ScheduleStatus::Active)
-        <div class="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <div class="mb-6 rounded-lg border border-amber-300 dark:border-amber-400/30 bg-amber-50 dark:bg-amber-400/10 p-4 text-sm text-amber-900 dark:text-amber-200">
             <p class="flex items-center gap-2 font-semibold"><x-icon name="alert" /> This timetable needs attention</p>
             <ul class="mt-1.5 list-disc space-y-0.5 pl-9">
                 @foreach ($report->all() as $conflict)

@@ -19,7 +19,7 @@
             @foreach (['weekly' => 'Week', 'monthly' => 'Month', 'custom' => 'Custom'] as $value => $label)
                 <label class="cursor-pointer">
                     <input type="radio" name="period" value="{{ $value }}" x-model="period" class="peer sr-only" @change="if (period !== 'custom') $el.form.submit()">
-                    <span class="block rounded px-3.5 py-1.5 text-sm font-medium text-ink-soft peer-checked:bg-ink peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-signal">{{ $label }}</span>
+                    <span class="block rounded px-3.5 py-1.5 text-sm font-medium text-ink-soft peer-checked:bg-ink peer-checked:text-paper peer-focus-visible:ring-2 peer-focus-visible:ring-signal">{{ $label }}</span>
                 </label>
             @endforeach
         </div>

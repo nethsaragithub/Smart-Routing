@@ -35,13 +35,16 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ? $title.' – ' : '' }}SRMSS</title>
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <x-theme-script />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen" x-data="{ nav: false }" @keydown.escape="nav = false">
+<x-backdrop />
+<x-curtain />
 <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 btn btn-secondary">Skip to content</a>
 
 {{-- Sidebar --}}
-<div x-show="nav" x-cloak class="fixed inset-0 z-30 bg-ink/50 lg:hidden" @click="nav = false"></div>
+<div x-show="nav" x-cloak class="fixed inset-0 z-30 bg-ink/50 dark:bg-black/65 lg:hidden" @click="nav = false"></div>
 <aside class="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-depot text-depot-text transition-transform lg:translate-x-0"
        :class="nav ? 'translate-x-0' : '-translate-x-full'" aria-label="Main navigation">
     <div class="flex items-center gap-3 px-5 h-16 border-b border-depot-line">
@@ -91,7 +94,8 @@
 
 {{-- Main column --}}
 <div class="lg:pl-64">
-    <header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-panel/95 px-4 backdrop-blur sm:px-6">
+    <header class="app-header sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-panel/80 px-4 backdrop-blur-md sm:px-6" data-app-header>
+        <span class="scroll-progress" data-scroll-progress aria-hidden="true"></span>
         <button class="btn-ghost btn btn-sm lg:hidden" @click="nav = true" aria-label="Open menu"><x-icon name="menu" size="20" /></button>
 
         <div class="flex min-w-0 items-center gap-2">
@@ -101,7 +105,7 @@
                     @csrf
                     <label for="depot-switch" class="sr-only">Working depot</label>
                     <select id="depot-switch" name="depot_id" onchange="this.form.submit()"
-                            class="rounded-md border-line-strong py-1.5 pl-2.5 pr-8 text-sm font-medium focus:ring-signal/25">
+                            class="rounded-md border-line-strong bg-panel py-1.5 pl-2.5 pr-8 text-sm font-medium text-ink focus:ring-signal/25">
                         @foreach ($switchableDepots as $depot)
                             <option value="{{ $depot->id }}" @selected($currentDepot?->id === $depot->id)>{{ $depot->name }}</option>
                         @endforeach
@@ -112,9 +116,12 @@
             @endif
         </div>
 
-        <div class="ml-auto text-sm text-muted text-right leading-tight">
-            <div class="font-medium text-ink whitespace-nowrap"><span class="sm:hidden">{{ now()->format('D j M') }}</span><span class="hidden sm:inline">{{ now()->format('l, j F Y') }}</span></div>
-            <div class="hidden sm:block">{{ now()->format('H:i') }}</div>
+        <div class="ml-auto flex items-center gap-2 sm:gap-3">
+            <div class="text-sm text-muted text-right leading-tight">
+                <div class="font-medium text-ink whitespace-nowrap"><span class="sm:hidden">{{ now()->format('D j M') }}</span><span class="hidden sm:inline">{{ now()->format('l, j F Y') }}</span></div>
+                <div class="hidden sm:block tabular-nums" data-live-clock data-now="{{ now()->getTimestampMs() }}" data-offset="{{ now()->utcOffset() }}">{{ now()->format('H:i') }}</div>
+            </div>
+            <x-display-toggles class="border-l border-line pl-1.5 sm:pl-2" />
         </div>
     </header>
 

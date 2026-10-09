@@ -16,12 +16,12 @@
     {{-- Status tabs --}}
     <nav class="mb-4 flex flex-wrap gap-2" aria-label="Filter by status">
         <a href="{{ route('trips.index', ['date' => $date->toDateString()]) }}"
-           @class(['rounded-full px-3 py-1 text-sm font-medium border', 'bg-ink text-white border-ink' => ! request('status'), 'bg-white border-line-strong hover:bg-paper' => request('status')])>
+           @class(['rounded-full px-3 py-1 text-sm font-medium border', 'bg-ink text-paper border-ink' => ! request('status'), 'bg-panel border-line-strong hover:bg-paper' => request('status')])>
             All <span class="tabular-nums opacity-75">{{ $counts->sum() }}</span>
         </a>
         @foreach ($statuses as $status)
             <a href="{{ route('trips.index', ['date' => $date->toDateString(), 'status' => $status->value]) }}"
-               @class(['rounded-full px-3 py-1 text-sm font-medium border', 'bg-ink text-white border-ink' => request('status') === $status->value, 'bg-white border-line-strong hover:bg-paper' => request('status') !== $status->value])>
+               @class(['rounded-full px-3 py-1 text-sm font-medium border', 'bg-ink text-paper border-ink' => request('status') === $status->value, 'bg-panel border-line-strong hover:bg-paper' => request('status') !== $status->value])>
                 {{ $status->label() }} <span class="tabular-nums opacity-75">{{ $counts[$status->value] ?? 0 }}</span>
             </a>
         @endforeach

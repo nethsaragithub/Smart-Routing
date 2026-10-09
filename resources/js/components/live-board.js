@@ -18,8 +18,14 @@ export default (url, intervalSeconds = 60) => ({
     async refresh() {
         try {
             const { data } = await window.axios.get(url);
+            const next = document.createElement('template');
+            next.innerHTML = data;
+            const text = (el) => el.textContent.replace(/\s+/g, ' ').trim();
+            const changed = text(next.content) !== text(this.$refs.board);
             this.$refs.board.innerHTML = data;
             this.updatedAt = new Date();
+            // Lets the motion layer flip the board only when something actually changed.
+            window.dispatchEvent(new CustomEvent('content:replaced', { detail: { element: this.$refs.board, changed } }));
         } catch {
             // Keep showing the last good board; try again next interval.
         }

@@ -18,6 +18,8 @@ import routeMap from './components/route-map';
 import scheduleForm from './components/schedule-form';
 import chart from './components/chart';
 import liveBoard from './components/live-board';
+import displayPrefs from './components/display-prefs';
+import { startMotion } from './motion';
 
 Alpine.plugin(collapse);
 
@@ -26,6 +28,10 @@ Alpine.data('routeMap', routeMap);
 Alpine.data('scheduleForm', scheduleForm);
 Alpine.data('chart', chart);
 Alpine.data('liveBoard', liveBoard);
+Alpine.data('displayPrefs', displayPrefs);
 
 window.Alpine = Alpine;
 Alpine.start();
+
+// After Alpine, so the motion layer sees the page as Alpine has rendered it.
+startMotion();

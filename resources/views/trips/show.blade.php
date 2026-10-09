@@ -30,7 +30,7 @@
                         <div class="text-sm text-muted">Departed</div>
                         <div class="mt-1 font-display text-2xl font-semibold tabular-nums">{{ $trip->actual_departure?->format('H:i') ?? 'Not yet' }}</div>
                         @if ($trip->delay_minutes)
-                            <div class="text-[13px] text-amber-800">{{ $trip->delay_minutes }} min late</div>
+                            <div class="text-[13px] text-amber-800 dark:text-amber-300">{{ $trip->delay_minutes }} min late</div>
                         @endif
                     </li>
                     <li class="bg-panel p-5">

@@ -69,7 +69,7 @@
                         </template>
                     </select>
                     @error('bus_id') <p class="mt-1.5 text-[13px] text-signal">{{ $message }}</p> @enderror
-                    <p x-show="noteFor(buses, busId)" x-cloak class="mt-1.5 text-[13px] text-amber-800" x-text="noteFor(buses, busId)"></p>
+                    <p x-show="noteFor(buses, busId)" x-cloak class="mt-1.5 text-[13px] text-amber-800 dark:text-amber-300" x-text="noteFor(buses, busId)"></p>
                 </div>
                 <div class="sm:col-span-2">
                     <label for="driver_id" class="field-label">Driver <span class="text-signal" aria-hidden="true">*</span></label>
@@ -80,7 +80,7 @@
                         </template>
                     </select>
                     @error('driver_id') <p class="mt-1.5 text-[13px] text-signal">{{ $message }}</p> @enderror
-                    <p x-show="noteFor(drivers, driverId)" x-cloak class="mt-1.5 text-[13px] text-amber-800" x-text="noteFor(drivers, driverId)"></p>
+                    <p x-show="noteFor(drivers, driverId)" x-cloak class="mt-1.5 text-[13px] text-amber-800 dark:text-amber-300" x-text="noteFor(drivers, driverId)"></p>
                 </div>
             </x-form.section>
 
@@ -91,7 +91,7 @@
                         @foreach ($recurrences as $recurrence)
                             <label class="cursor-pointer">
                                 <input type="radio" name="recurrence" value="{{ $recurrence->value }}" x-model="recurrence" class="peer sr-only">
-                                <span class="block rounded px-4 py-1.5 text-sm font-medium text-ink-soft peer-checked:bg-ink peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-signal">{{ $recurrence->label() }}</span>
+                                <span class="block rounded px-4 py-1.5 text-sm font-medium text-ink-soft peer-checked:bg-ink peer-checked:text-paper peer-focus-visible:ring-2 peer-focus-visible:ring-signal">{{ $recurrence->label() }}</span>
                             </label>
                         @endforeach
                     </div>
@@ -103,7 +103,7 @@
                         @foreach ($days as $num => $day)
                             <label class="cursor-pointer">
                                 <input type="checkbox" name="weekdays[]" value="{{ $num }}" x-model="weekdays" class="peer sr-only" :disabled="recurrence !== 'weekly'">
-                                <span class="flex h-10 w-12 items-center justify-center rounded-md border border-line-strong text-sm font-medium peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-signal">{{ $day }}</span>
+                                <span class="flex h-10 w-12 items-center justify-center rounded-md border border-line-strong text-sm font-medium peer-checked:border-ink peer-checked:bg-ink peer-checked:text-paper peer-focus-visible:ring-2 peer-focus-visible:ring-signal">{{ $day }}</span>
                             </label>
                         @endforeach
                     </div>
@@ -116,7 +116,7 @@
                         @for ($d = 1; $d <= 31; $d++)
                             <label class="cursor-pointer">
                                 <input type="checkbox" name="month_days[]" value="{{ $d }}" x-model="monthDays" class="peer sr-only" :disabled="recurrence !== 'monthly'">
-                                <span class="flex h-9 items-center justify-center rounded border border-line-strong text-sm tabular-nums peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-signal">{{ $d }}</span>
+                                <span class="flex h-9 items-center justify-center rounded border border-line-strong text-sm tabular-nums peer-checked:border-ink peer-checked:bg-ink peer-checked:text-paper peer-focus-visible:ring-2 peer-focus-visible:ring-signal">{{ $d }}</span>
                             </label>
                         @endfor
                     </div>
@@ -148,7 +148,7 @@
                     <p x-show="!report" class="text-muted">Choose a route, times, bus and driver to check for clashes.</p>
 
                     <template x-if="report && report.clear">
-                        <div class="flex gap-3 rounded-md bg-emerald-50 p-3 text-emerald-900">
+                        <div class="flex gap-3 rounded-md bg-emerald-50 dark:bg-emerald-400/10 p-3 text-emerald-900 dark:text-emerald-200">
                             <x-icon name="check-circle" class="mt-0.5" />
                             <p><strong>No clashes.</strong> The bus, driver and route are free at this time.</p>
                         </div>
@@ -167,10 +167,10 @@
 
                     <template x-if="report && report.warnings.length">
                         <div>
-                            <p class="mb-2 font-semibold text-amber-800">Warnings</p>
+                            <p class="mb-2 font-semibold text-amber-800 dark:text-amber-300">Warnings</p>
                             <ul class="space-y-2">
                                 <template x-for="item in report.warnings">
-                                    <li class="flex gap-2 rounded-md bg-amber-50 p-3 text-amber-900"><x-icon name="alert" size="16" class="mt-0.5" /><span x-text="item.message"></span></li>
+                                    <li class="flex gap-2 rounded-md bg-amber-50 dark:bg-amber-400/10 p-3 text-amber-900 dark:text-amber-200"><x-icon name="alert" size="16" class="mt-0.5" /><span x-text="item.message"></span></li>
                                 </template>
                             </ul>
                         </div>

@@ -43,7 +43,7 @@
                             <td><x-badge :value="$bus->service_type" /></td>
                             <td class="num">{{ $bus->seating_capacity }}</td>
                             <td class="num">{{ number_format($bus->current_mileage) }} km</td>
-                            <td @class(['whitespace-nowrap tabular-nums', 'text-signal font-medium' => $km < 0, 'text-amber-800' => $km >= 0 && $km <= 500])>
+                            <td @class(['whitespace-nowrap tabular-nums', 'text-signal font-medium' => $km < 0, 'text-amber-800 dark:text-amber-300' => $km >= 0 && $km <= 500])>
                                 {{ $km < 0 ? number_format(-$km).' km overdue' : 'in '.number_format($km).' km' }}
                             </td>
                             <td><x-badge :value="$bus->status" /></td>

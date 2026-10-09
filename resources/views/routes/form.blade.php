@@ -15,7 +15,7 @@
             <div class="grid lg:grid-cols-[1fr_360px]">
                 <div class="relative lg:min-h-[600px]">
                     <div x-ref="map" class="h-[460px] w-full bg-paper lg:absolute lg:inset-0 lg:h-full" aria-label="Map: click to add a stop"></div>
-                    <div x-show="routing" x-cloak class="absolute left-3 top-3 z-[500] rounded-md bg-white/95 px-3 py-1.5 text-sm shadow">Finding road path…</div>
+                    <div x-show="routing" x-cloak class="absolute left-3 top-3 z-[500] rounded-md bg-panel/95 px-3 py-1.5 text-sm shadow">Finding road path…</div>
                 </div>
 
                 <div class="flex flex-col border-t border-line lg:border-l lg:border-t-0">
@@ -46,9 +46,9 @@
 
                     <ol class="flex-1 space-y-1.5 overflow-auto p-4 lg:max-h-[380px]">
                         <template x-for="(stop, i) in stops" :key="i">
-                            <li class="flex items-center gap-2 rounded-md border border-line bg-white p-1.5">
+                            <li class="flex items-center gap-2 rounded-md border border-line bg-panel p-1.5">
                                 <button type="button" @click="focus(i)" class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[3px] border-board text-[11px] font-bold"
-                                        :class="(i === 0 || i === stops.length - 1) ? 'bg-board text-board-amber' : 'bg-white'" x-text="i + 1" :aria-label="'Show stop ' + (i + 1) + ' on map'"></button>
+                                        :class="(i === 0 || i === stops.length - 1) ? 'bg-board text-board-amber' : 'bg-panel'" x-text="i + 1" :aria-label="'Show stop ' + (i + 1) + ' on map'"></button>
                                 <input type="text" x-model="stop.name" class="min-w-0 flex-1 rounded border-transparent px-2 py-1 text-sm focus:border-line-strong focus:ring-0" :aria-label="'Name of stop ' + (i + 1)">
                                 <button type="button" @click="move(i, -1)" :disabled="i === 0" class="p-1 text-muted hover:text-ink disabled:opacity-30" aria-label="Move up"><x-icon name="arrow-up" size="15" /></button>
                                 <button type="button" @click="move(i, 1)" :disabled="i === stops.length - 1" class="p-1 text-muted hover:text-ink disabled:opacity-30" aria-label="Move down"><x-icon name="arrow-down" size="15" /></button>

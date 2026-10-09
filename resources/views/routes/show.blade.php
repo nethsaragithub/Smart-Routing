@@ -94,7 +94,7 @@
                             <span @class([
                                 'relative z-[1] flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[3px] text-[11px] font-bold',
                                 'border-board bg-board text-board-amber' => $loop->first || $loop->last,
-                                'border-board bg-white' => ! ($loop->first || $loop->last),
+                                'border-board bg-panel' => ! ($loop->first || $loop->last),
                             ])>{{ $stop->sequence }}</span>
                             <div class="flex-1 min-w-0 flex items-baseline justify-between gap-3">
                                 <span class="font-medium truncate">{{ $stop->name }}</span>

@@ -24,7 +24,7 @@
     </section>
 
     @if ($hoursThisWeek > $driver->max_weekly_hours)
-        <div class="mb-6 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <div class="mb-6 flex items-center gap-2 rounded-lg border border-amber-300 dark:border-amber-400/30 bg-amber-50 dark:bg-amber-400/10 p-4 text-sm text-amber-900 dark:text-amber-200">
             <x-icon name="alert" /> {{ $driver->shortName() }} is over the weekly working-hour limit. Consider moving a trip to another driver.
         </div>
     @endif
