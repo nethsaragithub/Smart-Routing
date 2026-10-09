@@ -1,5 +1,5 @@
 <x-layouts.app :title="'Route '.$route->route_no">
-    <x-page-header :title="$route->origin.' – '.$route->destination" :subtitle="$route->name" :back="route('routes.index')">
+    <x-page-header :title="$route->origin.' – '.$route->destination" :subtitle="$route->name" :back="auth()->user()->can('view-depot-records') ? route('routes.index') : url()->previous()">
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap items-center gap-3">
                 <x-route-no :no="$route->route_no" size="lg" />
@@ -12,14 +12,18 @@
             </div>
         </x-slot:meta>
         <x-slot:actions>
-            @can('manage-schedules')
-                <a href="{{ route('schedules.create', ['route' => $route->id]) }}" class="btn btn-secondary"><x-icon name="plus" size="16" /> Add departure</a>
-            @endcan
-            @can('manage-routes')
-                <a href="{{ route('routes.edit', $route) }}" class="btn btn-primary"><x-icon name="edit" size="16" /> Edit route</a>
-            @endcan
+            @if (! $route->trashed())
+                @can('manage-schedules')
+                    <a href="{{ route('schedules.create', ['route' => $route->id]) }}" class="btn btn-secondary"><x-icon name="plus" size="16" /> Add departure</a>
+                @endcan
+                @can('manage-routes')
+                    <a href="{{ route('routes.edit', $route) }}" class="btn btn-primary"><x-icon name="edit" size="16" /> Edit route</a>
+                @endcan
+            @endif
         </x-slot:actions>
     </x-page-header>
+
+    <x-removed-notice :model="$route" what="This route" />
 
     <div class="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div class="space-y-6">
@@ -37,7 +41,9 @@
             <section class="panel overflow-hidden">
                 <div class="panel-head">
                     <h2 class="panel-title">Departures</h2>
-                    <a href="{{ route('timetable', ['route' => $route->id]) }}" class="text-sm font-medium text-signal hover:underline">Weekly timetable</a>
+                    @can('view-depot-records')
+                        <a href="{{ route('timetable', ['route' => $route->id]) }}" class="text-sm font-medium text-signal hover:underline">Weekly timetable</a>
+                    @endcan
                 </div>
                 @if ($route->schedules->isEmpty())
                     <x-empty icon="calendar" title="No departures yet" text="Add a timetable to assign a bus and a driver to this route." />
@@ -108,10 +114,10 @@
                 </section>
             @endif
 
-            @can('manage-routes')
+            @if (! $route->trashed() && auth()->user()->can('manage-routes'))
                 <x-delete-button :action="route('routes.destroy', $route)" label="Delete route"
                                  confirm="Delete this route? Its history stays in reports, but it can no longer be scheduled." />
-            @endcan
+            @endif
         </div>
     </div>
 </x-layouts.app>

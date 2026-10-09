@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AdjustmentReason;
 use App\Enums\TripStatus;
+use App\Http\Requests\TripCorrectionRequest;
 use App\Models\Bus;
 use App\Models\BusRoute;
 use App\Models\Driver;
@@ -146,6 +147,26 @@ class TripController extends Controller
         $this->operations->reassign($trip, $bus, $driver, AdjustmentReason::from($data['reason']), $data['note'] ?? null, $request->user());
 
         return back()->with('success', 'Trip reassigned.');
+    }
+
+    /** Administrator correction form; works for finished trips too. */
+    public function edit(Trip $trip): View
+    {
+        $trip->load(['route', 'bus', 'driver']);
+
+        return view('trips.edit', [
+            'trip' => $trip,
+            'statuses' => TripStatus::options(),
+            'buses' => $this->withCurrent(Bus::query()->orderBy('registration_no')->get(), $trip->bus),
+            'drivers' => $this->withCurrent(Driver::query()->orderBy('full_name')->get(), $trip->driver),
+        ]);
+    }
+
+    public function update(TripCorrectionRequest $request, Trip $trip): RedirectResponse
+    {
+        $this->operations->correct($trip, $request->tripData(), $request->validated('note'), $request->user());
+
+        return redirect()->route('trips.show', $trip)->with('success', 'Trip record saved.');
     }
 
     /** Combine an HH:MM entered by the clerk with the trip's date (default: now). */

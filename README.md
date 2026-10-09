@@ -43,10 +43,12 @@ If your MySQL user has a password or uses a different port, set `DB_USERNAME`, `
 
 | Role | Email | Password | Can do |
 |---|---|---|---|
-| Administrator | admin@srmss.lk | Admin@123 | Everything, including users and depots. Can switch depot from the top bar. |
-| Depot supervisor | supervisor@srmss.lk | Super@123 | Routes, timetables, buses, drivers and reports (Maharagama depot) |
-| Operations staff | staff@srmss.lk | Staff@123 | Record departures and arrivals, fuel fills and maintenance |
+| Administrator | admin@srmss.lk | Admin@123 | Everything: users, depots, routes, timetables, buses and drivers (add, edit, remove), all reports. Corrects any trip, including completed ones, and edits or deletes trip activity entries. Can switch depot from the top bar. |
+| Depot supervisor | supervisor@srmss.lk | Super@123 | Views buses, drivers, routes, timetables, fuel and maintenance records. Generates the day's trips, swaps buses and drivers, records delays. Operational reports only (trip completion, route performance, driver hours). Maharagama depot. |
+| Operations staff | staff@srmss.lk | Staff@123 | Runs trips: departure, delay, arrival, cancellation. Views the bus, driver and route of a trip. Records and updates fuel fills and maintenance jobs (cannot delete them). |
 | Depot supervisor | kandy.supervisor@srmss.lk | Super@123 | Same as supervisor, Kandy South depot |
+
+Removing a bus, driver or route is a soft delete: past trips, fuel fills, maintenance jobs and reports keep showing it, and its page stays viewable with a "removed" notice. A bus, driver or route that still has active timetables or upcoming trips cannot be removed.
 
 ### Keeping trips generated
 
@@ -131,14 +133,16 @@ Key classes for the class diagram: `User`, `Depot`, `Bus`, `Driver`, `BusRoute`,
 php artisan test
 ```
 
-There are 72 automated tests (204 assertions). They use an in-memory SQLite database, so your MySQL data is not touched.
+There are 109 automated tests. They use an in-memory SQLite database, so your MySQL data is not touched.
 
 | Test file | Type | Covers |
 |---|---|---|
 | `tests/Unit/RecurrenceRuleTest.php` | White box | Daily, weekly and monthly recurrence; finding shared dates between timetables |
 | `tests/Unit/DomainRulesTest.php` | White box | Licence status, role permissions, distance calculation, report periods |
 | `tests/Feature/AuthenticationTest.php` | Black box | Sign in and out, wrong password, inactive accounts, lock-out after 5 failures |
-| `tests/Feature/AccessControlTest.php` | Black box | Role permissions, depot data isolation, depot switching |
+| `tests/Feature/AccessControlTest.php` | Black box | What each role may open and do, depot data isolation, depot switching |
+| `tests/Feature/TripCorrectionTest.php` | Black box | Administrator corrections to completed trips and to the activity log |
+| `tests/Feature/RemovedRecordsTest.php` | Black box | Removed buses, drivers and routes keep their trips, fuel history and report figures |
 | `tests/Feature/ScheduleConflictTest.php` | Black box | Every scheduling rule, warning acknowledgement, live check, suspension |
 | `tests/Feature/TripOperationsTest.php` | Black box | Trip generation, departure, delay, arrival, cancellation, bus/driver swap |
 | `tests/Feature/FleetManagementTest.php` | Black box | Routes with stops, bus and driver validation (Sri Lankan formats), fuel, maintenance |

@@ -47,7 +47,13 @@ class DriverHoursReport extends Report
             ->get()
             ->groupBy('driver_id');
 
-        return Driver::query()->orderBy('full_name')->get()->map(function (Driver $driver) use ($trips, $weeks) {
+        // Removed drivers stay in the report for periods in which they drove.
+        $drivers = Driver::withTrashed()
+            ->where(fn ($q) => $q->whereNull('deleted_at')->orWhereIn('id', $trips->keys()))
+            ->orderBy('full_name')
+            ->get();
+
+        return $drivers->map(function (Driver $driver) use ($trips, $weeks) {
             $driverTrips = $trips->get($driver->id, collect());
             $hours = round($driverTrips->sum(fn (Trip $t) => $t->durationMinutes()) / 60, 1);
 

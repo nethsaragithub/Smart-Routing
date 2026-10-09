@@ -12,6 +12,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\TimetableController;
+use App\Http\Controllers\TripAdjustmentController;
 use App\Http\Controllers\TripController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -38,46 +39,65 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::middleware('can:manage-routes')->group(function () {
         Route::resource('routes', BusRouteController::class)->except(['index', 'show'])->parameters(['routes' => 'route']);
     });
-    Route::resource('routes', BusRouteController::class)->only(['index', 'show'])->parameters(['routes' => 'route']);
+    Route::get('routes', [BusRouteController::class, 'index'])->middleware('can:view-depot-records')->name('routes.index');
+    // Detail pages stay open to every role (staff reach them from their trips) and still show removed records.
+    Route::get('routes/{route}', [BusRouteController::class, 'show'])->withTrashed()->name('routes.show');
 
     // Schedule Management
-    Route::get('timetable', [TimetableController::class, 'index'])->name('timetable');
+    Route::get('timetable', [TimetableController::class, 'index'])->middleware('can:view-depot-records')->name('timetable');
     Route::middleware('can:manage-schedules')->group(function () {
         Route::post('schedules/check', [ScheduleController::class, 'check'])->name('schedules.check');
         Route::get('schedules/options', [ScheduleController::class, 'options'])->name('schedules.options');
         Route::patch('schedules/{schedule}/status', [ScheduleController::class, 'toggleStatus'])->name('schedules.status');
         Route::resource('schedules', ScheduleController::class)->except(['index', 'show']);
     });
-    Route::resource('schedules', ScheduleController::class)->only(['index', 'show']);
+    Route::get('schedules', [ScheduleController::class, 'index'])->middleware('can:view-depot-records')->name('schedules.index');
+    Route::get('schedules/{schedule}', [ScheduleController::class, 'show'])->name('schedules.show');
 
     // Trips (daily operations)
     Route::get('trips', [TripController::class, 'index'])->name('trips.index');
-    Route::get('trips/{trip}', [TripController::class, 'show'])->name('trips.show');
-    Route::middleware('can:operate-trips')->group(function () {
+    Route::middleware('can:assign-trips')->group(function () {
         Route::post('trips/generate', [TripController::class, 'generate'])->name('trips.generate');
-        Route::post('trips/{trip}/depart', [TripController::class, 'depart'])->name('trips.depart');
-        Route::post('trips/{trip}/arrive', [TripController::class, 'arrive'])->name('trips.arrive');
-        Route::post('trips/{trip}/delay', [TripController::class, 'delay'])->name('trips.delay');
-        Route::post('trips/{trip}/cancel', [TripController::class, 'cancel'])->name('trips.cancel');
         Route::post('trips/{trip}/reassign', [TripController::class, 'reassign'])->name('trips.reassign');
     });
+    Route::post('trips/{trip}/delay', [TripController::class, 'delay'])->middleware('can:record-delays')->name('trips.delay');
+    Route::middleware('can:operate-trips')->group(function () {
+        Route::post('trips/{trip}/depart', [TripController::class, 'depart'])->name('trips.depart');
+        Route::post('trips/{trip}/arrive', [TripController::class, 'arrive'])->name('trips.arrive');
+        Route::post('trips/{trip}/cancel', [TripController::class, 'cancel'])->name('trips.cancel');
+    });
+    Route::middleware('can:correct-trips')->group(function () {
+        Route::get('trips/{trip}/edit', [TripController::class, 'edit'])->name('trips.edit');
+        Route::put('trips/{trip}', [TripController::class, 'update'])->name('trips.update');
+        Route::put('trips/{trip}/activity/{adjustment}', [TripAdjustmentController::class, 'update'])->scopeBindings()->name('trips.activity.update');
+        Route::delete('trips/{trip}/activity/{adjustment}', [TripAdjustmentController::class, 'destroy'])->scopeBindings()->name('trips.activity.destroy');
+    });
+    Route::get('trips/{trip}', [TripController::class, 'show'])->name('trips.show');
 
     // Driver and Vehicle Management
     Route::middleware('can:manage-fleet')->group(function () {
         Route::resource('buses', BusController::class)->except(['index', 'show']);
         Route::resource('drivers', DriverController::class)->except(['index', 'show']);
     });
-    Route::resource('buses', BusController::class)->only(['index', 'show']);
-    Route::resource('drivers', DriverController::class)->only(['index', 'show']);
+    Route::middleware('can:view-depot-records')->group(function () {
+        Route::get('buses', [BusController::class, 'index'])->name('buses.index');
+        Route::get('drivers', [DriverController::class, 'index'])->name('drivers.index');
+    });
+    Route::get('buses/{bus}', [BusController::class, 'show'])->withTrashed()->name('buses.show');
+    Route::get('drivers/{driver}', [DriverController::class, 'show'])->withTrashed()->name('drivers.show');
 
     // Fuel and Maintenance Log
     Route::get('fuel', [FuelLogController::class, 'index'])->name('fuel.index');
     Route::get('maintenance', [MaintenanceRecordController::class, 'index'])->name('maintenance.index');
     Route::middleware('can:log-fuel-maintenance')->group(function () {
-        Route::resource('fuel', FuelLogController::class)->except(['index', 'show'])->parameters(['fuel' => 'fuelLog']);
-        Route::resource('maintenance', MaintenanceRecordController::class)->except(['index', 'show'])->parameters(['maintenance' => 'record']);
+        Route::resource('fuel', FuelLogController::class)->except(['index', 'show', 'destroy'])->parameters(['fuel' => 'fuelLog']);
+        Route::resource('maintenance', MaintenanceRecordController::class)->except(['index', 'show', 'destroy'])->parameters(['maintenance' => 'record']);
         Route::post('maintenance/{record}/start', [MaintenanceRecordController::class, 'start'])->name('maintenance.start');
         Route::post('maintenance/{record}/complete', [MaintenanceRecordController::class, 'complete'])->name('maintenance.complete');
+    });
+    Route::middleware('can:manage-fuel-maintenance')->group(function () {
+        Route::delete('fuel/{fuelLog}', [FuelLogController::class, 'destroy'])->name('fuel.destroy');
+        Route::delete('maintenance/{record}', [MaintenanceRecordController::class, 'destroy'])->name('maintenance.destroy');
     });
 
     // Reporting and Analytics

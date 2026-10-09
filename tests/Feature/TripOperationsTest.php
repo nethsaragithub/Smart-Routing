@@ -112,7 +112,7 @@ class TripOperationsTest extends TestCase
         $trip = $this->todaysTrip();
         $spare = $this->bus();
 
-        $this->actingAs($this->staff())->post("/trips/{$trip->id}/reassign", ['bus_id' => $spare->id, 'reason' => 'breakdown'])
+        $this->actingAs($this->supervisor())->post("/trips/{$trip->id}/reassign", ['bus_id' => $spare->id, 'reason' => 'breakdown'])
             ->assertSessionHas('success');
 
         $this->assertSame($spare->id, $trip->fresh()->bus_id);
@@ -124,7 +124,7 @@ class TripOperationsTest extends TestCase
         $trip = $this->todaysTrip();
         $busyTrip = $this->todaysTrip(['departure_time' => '09:30', 'arrival_time' => '10:30']);
 
-        $this->actingAs($this->staff())->post("/trips/{$trip->id}/reassign", ['bus_id' => $busyTrip->bus_id, 'reason' => 'breakdown'])
+        $this->actingAs($this->supervisor())->post("/trips/{$trip->id}/reassign", ['bus_id' => $busyTrip->bus_id, 'reason' => 'breakdown'])
             ->assertSessionHas('error');
 
         $this->assertNotSame($busyTrip->bus_id, $trip->fresh()->bus_id);

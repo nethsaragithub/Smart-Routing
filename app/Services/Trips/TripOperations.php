@@ -135,6 +135,33 @@ class TripOperations
         });
     }
 
+    /**
+     * Administrator correction of a trip record, including finished trips.
+     * Skips the day-of-operation rules but still logs what was changed.
+     *
+     * @param  array<string, mixed>  $data  attributes from TripCorrectionRequest
+     */
+    public function correct(Trip $trip, array $data, ?string $note, ?User $by): Trip
+    {
+        return DB::transaction(function () use ($trip, $data, $note, $by) {
+            $trip->fill($data);
+            $changed = array_keys($trip->getDirty());
+
+            if ($changed === []) {
+                return $trip;
+            }
+
+            $trip->save();
+            $trip->unsetRelation('bus')->unsetRelation('driver');
+            $trip->bus->recordMileage($trip->odometer_end);
+
+            $fields = collect($changed)->map(fn (string $field) => str_replace(['bus_id', 'driver_id', '_'], ['bus', 'driver', ' '], $field));
+            $this->log($trip, AdjustmentType::Correction, null, 'Corrected '.$fields->implode(', '), $note, $by);
+
+            return $trip;
+        });
+    }
+
     private function ensureOpen(Trip $trip): void
     {
         if (! $trip->status->isOpen()) {

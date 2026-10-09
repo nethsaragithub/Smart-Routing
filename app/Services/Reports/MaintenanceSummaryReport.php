@@ -26,6 +26,11 @@ class MaintenanceSummaryReport extends Report
         return 'Routine and corrective work per bus, cost and days off the road.';
     }
 
+    public static function forManagement(): bool
+    {
+        return true;
+    }
+
     public function columns(): array
     {
         return [

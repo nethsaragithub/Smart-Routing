@@ -2,7 +2,7 @@
 <x-layouts.app title="Maintenance">
     <x-page-header title="Maintenance" subtitle="Routine services and repairs. Starting a job takes the bus off the road until it is completed.">
         <x-slot:actions>
-            @can('view-reports')
+            @can('view-management-reports')
                 <a href="{{ route('reports.show', 'maintenance') }}" class="btn btn-secondary"><x-icon name="chart" size="16" /> Summary report</a>
             @endcan
             @can('log-fuel-maintenance')

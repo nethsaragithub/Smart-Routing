@@ -17,10 +17,13 @@ class MaintenanceRequest extends FormRequest
 
     public function rules(): array
     {
-        $depotId = $this->route('record')?->depot_id ?? app(DepotContext::class)->id();
+        $record = $this->route('record');
+        $depotId = $record?->depot_id ?? app(DepotContext::class)->id();
 
         return [
-            'bus_id' => ['required', Rule::exists('buses', 'id')->where('depot_id', $depotId)],
+            // A removed bus cannot be chosen, but an edited job may keep its own.
+            'bus_id' => ['required', Rule::exists('buses', 'id')->where('depot_id', $depotId)
+                ->where(fn ($q) => $q->whereNull('deleted_at')->when($record?->bus_id, fn ($q, $keep) => $q->orWhere('id', $keep)))],
             'type' => ['required', Rule::enum(MaintenanceType::class)],
             'category' => ['required', Rule::enum(MaintenanceCategory::class)],
             'title' => ['required', 'string', 'max:255'],

@@ -12,10 +12,12 @@ enum AdjustmentType: string implements HasBadge
     case Cancellation = 'cancellation';
     case Departure = 'departure';
     case Arrival = 'arrival';
+    case Correction = 'correction';
 
     public function label(): string
     {
         return match ($this) {
+            self::Correction => 'Record corrected',
             self::BusChange => 'Bus changed',
             self::DriverChange => 'Driver changed',
             self::Delay => 'Delay reported',
@@ -33,6 +35,7 @@ enum AdjustmentType: string implements HasBadge
             self::Cancellation => 'red',
             self::Departure => 'green',
             self::Arrival => 'blue',
+            self::Correction => 'slate',
         };
     }
 }

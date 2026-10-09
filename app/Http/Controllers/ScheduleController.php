@@ -119,6 +119,13 @@ class ScheduleController extends Controller
             return back()->with('success', 'Timetable suspended. Its upcoming trips were removed from the board.');
         }
 
+        $removed = collect(['route' => $schedule->route, 'bus' => $schedule->bus, 'driver' => $schedule->driver])
+            ->filter(fn ($model) => $model->trashed())->keys();
+
+        if ($removed->isNotEmpty()) {
+            return back()->with('error', 'This timetable cannot resume: its '.$removed->join(', ', ' and ').' has been removed. Edit it to choose a replacement first.');
+        }
+
         $report = $this->manager->check($this->asArray($schedule), $schedule);
 
         if ($report->hasErrors()) {

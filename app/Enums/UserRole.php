@@ -40,16 +40,17 @@ enum UserRole: string implements HasBadge
     {
         return match ($this) {
             self::Admin => Permission::cases(),
+            // Oversees the day: views everything, assigns buses and drivers to trips, records delays.
             self::Supervisor => [
-                Permission::ManageRoutes,
-                Permission::ManageSchedules,
-                Permission::ManageFleet,
-                Permission::OperateTrips,
-                Permission::LogFuelAndMaintenance,
+                Permission::ViewDepotRecords,
+                Permission::AssignTrips,
+                Permission::RecordDelays,
                 Permission::ViewReports,
             ],
+            // Runs the trips: departures, arrivals, delays, fuel fills and workshop jobs.
             self::Staff => [
                 Permission::OperateTrips,
+                Permission::RecordDelays,
                 Permission::LogFuelAndMaintenance,
             ],
         };

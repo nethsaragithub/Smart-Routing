@@ -24,27 +24,44 @@ class ReportsTest extends TestCase
     #[DataProvider('reports')]
     public function test_every_report_renders_for_weekly_and_monthly_periods(string $key): void
     {
-        $supervisor = $this->supervisor();
+        $admin = $this->admin();
 
-        $this->actingAs($supervisor)->get("/reports/{$key}?period=weekly")->assertOk();
-        $this->actingAs($supervisor)->get("/reports/{$key}?period=monthly")->assertOk();
+        $this->actingAs($admin)->get("/reports/{$key}?period=weekly")->assertOk();
+        $this->actingAs($admin)->get("/reports/{$key}?period=monthly")->assertOk();
     }
 
     #[DataProvider('reports')]
     public function test_every_report_exports_to_pdf_and_csv(string $key): void
     {
-        $supervisor = $this->supervisor();
+        $admin = $this->admin();
 
-        $this->actingAs($supervisor)->get("/reports/{$key}/export/pdf")
+        $this->actingAs($admin)->get("/reports/{$key}/export/pdf")
             ->assertOk()->assertHeader('content-type', 'application/pdf');
 
-        $this->actingAs($supervisor)->get("/reports/{$key}/export/csv")
+        $this->actingAs($admin)->get("/reports/{$key}/export/csv")
             ->assertOk()->assertHeader('content-type', 'text/csv; charset=UTF-8');
     }
 
     public function test_unknown_report_returns_not_found(): void
     {
-        $this->actingAs($this->supervisor())->get('/reports/does-not-exist')->assertNotFound();
+        $this->actingAs($this->admin())->get('/reports/does-not-exist')->assertNotFound();
+    }
+
+    public function test_supervisor_sees_operational_reports_only(): void
+    {
+        $supervisor = $this->supervisor();
+
+        $this->actingAs($supervisor)->get('/reports')
+            ->assertOk()->assertSee('Trip completion')->assertDontSee('Fuel consumption');
+
+        foreach (['trip-completion', 'route-performance', 'driver-hours'] as $key) {
+            $this->actingAs($supervisor)->get("/reports/{$key}")->assertOk();
+        }
+
+        foreach (['fuel-consumption', 'maintenance'] as $key) {
+            $this->actingAs($supervisor)->get("/reports/{$key}")->assertForbidden();
+            $this->actingAs($supervisor)->get("/reports/{$key}/export/csv")->assertForbidden();
+        }
     }
 
     public function test_trip_completion_figures_are_calculated_correctly(): void

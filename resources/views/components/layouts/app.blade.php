@@ -6,15 +6,15 @@
         ],
         'Operations' => [
             ['Trips', 'trips.index', 'trips.*', 'clock', null],
-            ['Timetable', 'timetable', 'timetable', 'calendar', null],
-            ['Schedules', 'schedules.index', 'schedules.*', 'list', null],
+            ['Timetable', 'timetable', 'timetable', 'calendar', 'view-depot-records'],
+            ['Schedules', 'schedules.index', 'schedules.*', 'list', 'view-depot-records'],
         ],
         'Planning' => [
-            ['Routes', 'routes.index', 'routes.*', 'route', null],
+            ['Routes', 'routes.index', 'routes.*', 'route', 'view-depot-records'],
         ],
         'Fleet' => [
-            ['Buses', 'buses.index', 'buses.*', 'bus', null],
-            ['Drivers', 'drivers.index', 'drivers.*', 'user', null],
+            ['Buses', 'buses.index', 'buses.*', 'bus', 'view-depot-records'],
+            ['Drivers', 'drivers.index', 'drivers.*', 'user', 'view-depot-records'],
             ['Fuel log', 'fuel.index', 'fuel.*', 'fuel', null],
             ['Maintenance', 'maintenance.index', 'maintenance.*', 'wrench', null],
         ],

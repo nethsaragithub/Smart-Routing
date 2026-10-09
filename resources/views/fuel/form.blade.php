@@ -8,10 +8,10 @@
         @if ($editing) @method('PUT') @endif
 
         <x-form.section title="Vehicle">
-            <x-form.select name="bus_id" label="Bus" :options="$buses->pluck('registration_no', 'id')" :value="$log->bus_id" placeholder="Choose a bus" required />
+            <x-form.select name="bus_id" label="Bus" :options="$buses->mapWithKeys(fn ($b) => [$b->id => $b->registration_no.($b->trashed() ? ' (removed)' : '')])" :value="$log->bus_id" placeholder="Choose a bus" required />
             <x-form.input name="filled_on" label="Date" type="date" :value="$log->filled_on" required max="{{ today()->toDateString() }}" />
-            <x-form.select name="driver_id" label="Driver" :options="$drivers->pluck('full_name', 'id')" :value="$log->driver_id" placeholder="Not recorded" hint="Needed for driver fuel-economy comparisons." />
-            <x-form.select name="bus_route_id" label="Route operated" :options="$routes->mapWithKeys(fn ($r) => [$r->id => $r->route_no.' · '.$r->destination])" :value="$log->bus_route_id" placeholder="Not recorded" hint="Needed to find high-usage routes." />
+            <x-form.select name="driver_id" label="Driver" :options="$drivers->mapWithKeys(fn ($d) => [$d->id => $d->full_name.($d->trashed() ? ' (removed)' : '')])" :value="$log->driver_id" placeholder="Not recorded" hint="Needed for driver fuel-economy comparisons." />
+            <x-form.select name="bus_route_id" label="Route operated" :options="$routes->mapWithKeys(fn ($r) => [$r->id => $r->route_no.' · '.$r->destination.($r->trashed() ? ' (removed)' : '')])" :value="$log->bus_route_id" placeholder="Not recorded" hint="Needed to find high-usage routes." />
         </x-form.section>
 
         <x-form.section title="Fill-up">
@@ -27,13 +27,13 @@
         </x-form.section>
 
         <x-form.actions :cancel="route('fuel.index')" :submit="$editing ? 'Save entry' : 'Record fill-up'">
-            @if ($editing)
+            @if ($editing && auth()->user()->can('manage-fuel-maintenance'))
                 <button type="submit" form="delete-fuel" class="btn btn-danger sm:mr-auto"><x-icon name="trash" size="16" /> Delete entry</button>
             @endif
         </x-form.actions>
     </form>
 
-    @if ($editing)
+    @if ($editing && auth()->user()->can('manage-fuel-maintenance'))
         <form id="delete-fuel" method="POST" action="{{ route('fuel.destroy', $log) }}" onsubmit="return confirm('Delete this fuel entry?')">
             @csrf @method('DELETE')
         </form>

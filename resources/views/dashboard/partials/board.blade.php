@@ -13,7 +13,7 @@
 @if ($trips->isEmpty())
     <x-empty icon="calendar" title="No trips for today yet"
              text="Trips are created from the timetables. Generate them for today to start tracking departures.">
-        @can('operate-trips')
+        @can('assign-trips')
             <form method="POST" action="{{ route('trips.generate') }}">
                 @csrf
                 <input type="hidden" name="from" value="{{ today()->toDateString() }}">

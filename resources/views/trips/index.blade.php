@@ -7,7 +7,7 @@
                 <input id="trip-date" type="date" name="date" value="{{ $date->toDateString() }}" onchange="this.form.submit()" class="control py-1.5 text-sm">
             </form>
             <a href="{{ route('trips.index', ['date' => $date->addDay()->toDateString()]) }}" class="btn btn-secondary" aria-label="Next day"><x-icon name="chevron-right" size="16" /></a>
-            @can('operate-trips')
+            @can('assign-trips')
                 <button type="button" class="btn btn-primary" @click="$dispatch('open-modal', 'generate')"><x-icon name="refresh" size="16" /> Generate trips</button>
             @endcan
         </x-slot:actions>
@@ -31,7 +31,7 @@
         @if ($trips->isEmpty())
             <x-empty icon="clock" title="No trips for this day"
                      :text="$counts->sum() ? 'No trips match this filter.' : 'Trips are created from the timetables. Generate them to start recording departures.'">
-                @can('operate-trips')
+                @can('assign-trips')
                     @if (! $counts->sum())
                         <form method="POST" action="{{ route('trips.generate') }}">
                             @csrf
@@ -96,7 +96,7 @@
         @endif
     </div>
 
-    @can('operate-trips')
+    @can('assign-trips')
         <x-modal name="generate" title="Generate trips">
             <form method="POST" action="{{ route('trips.generate') }}" class="space-y-4">
                 @csrf

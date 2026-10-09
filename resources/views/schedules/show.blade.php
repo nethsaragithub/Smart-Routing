@@ -1,7 +1,7 @@
 <x-layouts.app :title="'Timetable '.$schedule->route->route_no.' '.$schedule->departureLabel()">
     <x-page-header :title="$schedule->departureLabel().' to '.$schedule->route->destination"
                    :subtitle="$schedule->rule()->describe().' · '.$schedule->departureLabel().'–'.$schedule->arrivalLabel()"
-                   :back="route('schedules.index')">
+                   :back="auth()->user()->can('view-depot-records') ? route('schedules.index') : url()->previous()">
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap items-center gap-2">
                 <a href="{{ route('routes.show', $schedule->route) }}"><x-route-no :no="$schedule->route->route_no" /></a>

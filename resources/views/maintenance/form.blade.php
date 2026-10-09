@@ -7,7 +7,7 @@
         @if ($editing) @method('PUT') @endif
 
         <x-form.section title="Job" description="Routine: planned servicing. Corrective: repairs after a fault or breakdown.">
-            <x-form.select name="bus_id" label="Bus" :options="$buses->pluck('registration_no', 'id')" :value="$record->bus_id" placeholder="Choose a bus" required />
+            <x-form.select name="bus_id" label="Bus" :options="$buses->mapWithKeys(fn ($b) => [$b->id => $b->registration_no.($b->trashed() ? ' (removed)' : '')])" :value="$record->bus_id" placeholder="Choose a bus" required />
             <x-form.input name="scheduled_for" label="Planned date" type="date" :value="$record->scheduled_for" required />
             <x-form.select name="type" label="Type" :options="$types" :value="$record->type" required />
             <x-form.select name="category" label="Category" :options="$categories" :value="$record->category" required />
@@ -25,13 +25,13 @@
         </x-form.section>
 
         <x-form.actions :cancel="route('maintenance.index')" :submit="$editing ? 'Save job' : 'Create job'">
-            @if ($editing && $record->status !== \App\Enums\MaintenanceStatus::InProgress)
+            @if ($editing && $record->status !== \App\Enums\MaintenanceStatus::InProgress && auth()->user()->can('manage-fuel-maintenance'))
                 <button type="submit" form="delete-job" class="btn btn-danger sm:mr-auto"><x-icon name="trash" size="16" /> Delete job</button>
             @endif
         </x-form.actions>
     </form>
 
-    @if ($editing)
+    @if ($editing && auth()->user()->can('manage-fuel-maintenance'))
         <form id="delete-job" method="POST" action="{{ route('maintenance.destroy', $record) }}" onsubmit="return confirm('Delete this maintenance job?')">
             @csrf @method('DELETE')
         </form>

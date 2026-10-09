@@ -1,6 +1,6 @@
 @php $licence = $driver->licenseStatus(); @endphp
 <x-layouts.app :title="$driver->full_name">
-    <x-page-header :title="$driver->full_name" :subtitle="'Employee '.$driver->employee_no.' · '.$driver->phone" :back="route('drivers.index')">
+    <x-page-header :title="$driver->full_name" :subtitle="'Employee '.$driver->employee_no.' · '.$driver->phone" :back="auth()->user()->can('view-depot-records') ? route('drivers.index') : url()->previous()">
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap gap-2">
                 <x-badge :value="$driver->status" />
@@ -8,11 +8,13 @@
             </div>
         </x-slot:meta>
         <x-slot:actions>
-            @can('manage-fleet')
+            @if (! $driver->trashed() && auth()->user()->can('manage-fleet'))
                 <a href="{{ route('drivers.edit', $driver) }}" class="btn btn-primary"><x-icon name="edit" size="16" /> Edit</a>
-            @endcan
+            @endif
         </x-slot:actions>
     </x-page-header>
+
+    <x-removed-notice :model="$driver" what="This driver" />
 
     <section class="panel mb-6 grid grid-cols-2 gap-px overflow-hidden bg-line lg:grid-cols-4">
         <x-stat label="Hours this week" :value="number_format($hoursThisWeek, 1)" :hint="'limit '.$driver->max_weekly_hours.' h'" />
@@ -101,9 +103,9 @@
         </div>
     </div>
 
-    @can('manage-fleet')
+    @if (! $driver->trashed() && auth()->user()->can('manage-fleet'))
         <div class="mt-6">
             <x-delete-button :action="route('drivers.destroy', $driver)" label="Remove driver" confirm="Remove this driver? Their trip history is kept." />
         </div>
-    @endcan
+    @endif
 </x-layouts.app>

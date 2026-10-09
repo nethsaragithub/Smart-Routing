@@ -3,7 +3,7 @@
         <x-slot:actions>
             <a href="{{ route('fuel.index', $period->previous()->toQuery() + request()->only('bus')) }}" class="btn btn-secondary" aria-label="Previous month"><x-icon name="chevron-left" size="16" /></a>
             <a href="{{ route('fuel.index', $period->next()->toQuery() + request()->only('bus')) }}" class="btn btn-secondary" aria-label="Next month"><x-icon name="chevron-right" size="16" /></a>
-            @can('view-reports')
+            @can('view-management-reports')
                 <a href="{{ route('reports.show', ['report' => 'fuel-consumption'] + $period->toQuery()) }}" class="btn btn-secondary"><x-icon name="chart" size="16" /> Fuel report</a>
             @endcan
             @can('log-fuel-maintenance')

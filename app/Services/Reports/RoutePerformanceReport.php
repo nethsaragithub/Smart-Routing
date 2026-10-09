@@ -48,7 +48,8 @@ class RoutePerformanceReport extends Report
 
         $fuel = app(FuelEfficiencyCalculator::class)->byRoute($this->period)->keyBy(fn ($r) => $r->route->id);
 
-        return BusRoute::query()->orderBy('route_no')->get()
+        // Includes removed routes; routes without trips in the period are dropped below.
+        return BusRoute::withTrashed()->orderBy('route_no')->get()
             ->map(function (BusRoute $route) use ($trips, $fuel) {
                 $routeTrips = $trips->get($route->id, collect());
                 $completed = $routeTrips->where('status', TripStatus::Completed);

@@ -84,6 +84,12 @@ class DriverController extends Controller
             return back()->with('error', "{$driver->full_name} is on active timetables. Reassign them first.");
         }
 
+        if ($upcoming = $driver->trips()->open()->whereDate('trip_date', '>=', today())->count()) {
+            return back()->with('error', "{$driver->full_name} still has {$upcoming} upcoming trip(s). Swap them to another driver first.");
+        }
+
+        // Soft delete: past trips and fuel fills keep pointing at this driver.
+
         $driver->delete();
 
         return redirect()->route('drivers.index')->with('success', "{$driver->full_name} removed. Their trip history is kept.");

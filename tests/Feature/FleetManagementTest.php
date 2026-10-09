@@ -26,7 +26,7 @@ class FleetManagementTest extends TestCase
             ['name' => 'Kottawa', 'lat' => 6.8412, 'lng' => 79.9650],
         ];
 
-        $this->actingAs($this->supervisor())->post('/routes', [
+        $this->actingAs($this->admin())->post('/routes', [
             'route_no' => '138', 'name' => 'Pettah – Kottawa', 'origin' => 'Pettah', 'destination' => 'Kottawa',
             'distance_km' => 18.4, 'estimated_duration_minutes' => 65, 'service_type' => 'normal',
             'is_active' => 1, 'stops' => json_encode($stops),
@@ -40,7 +40,7 @@ class FleetManagementTest extends TestCase
 
     public function test_route_needs_at_least_two_stops(): void
     {
-        $this->actingAs($this->supervisor())->post('/routes', [
+        $this->actingAs($this->admin())->post('/routes', [
             'route_no' => '138', 'name' => 'Test', 'origin' => 'A', 'destination' => 'B',
             'distance_km' => 10, 'estimated_duration_minutes' => 30, 'service_type' => 'normal',
             'stops' => json_encode([['name' => 'A', 'lat' => 6.9, 'lng' => 79.8]]),
@@ -51,7 +51,7 @@ class FleetManagementTest extends TestCase
     {
         $this->route(['route_no' => '138']);
 
-        $this->actingAs($this->supervisor())->post('/routes', [
+        $this->actingAs($this->admin())->post('/routes', [
             'route_no' => '138', 'name' => 'Dup', 'origin' => 'A', 'destination' => 'B', 'distance_km' => 10,
             'estimated_duration_minutes' => 30, 'service_type' => 'normal',
             'stops' => json_encode([['name' => 'A', 'lat' => 6.9, 'lng' => 79.8], ['name' => 'B', 'lat' => 6.8, 'lng' => 79.9]]),
@@ -65,10 +65,10 @@ class FleetManagementTest extends TestCase
             'fuel_type' => 'diesel', 'current_mileage' => 1000, 'service_interval_km' => 10000, 'status' => 'active',
         ];
 
-        $this->actingAs($this->supervisor())->post('/buses', [...$data, 'registration_no' => 'ABC123'])
+        $this->actingAs($this->admin())->post('/buses', [...$data, 'registration_no' => 'ABC123'])
             ->assertSessionHasErrors('registration_no');
 
-        $this->actingAs($this->supervisor())->post('/buses', [...$data, 'registration_no' => 'wp nb-4521'])
+        $this->actingAs($this->admin())->post('/buses', [...$data, 'registration_no' => 'wp nb-4521'])
             ->assertSessionHasNoErrors();
 
         $this->assertSame('WP NB-4521', Bus::first()->registration_no);
@@ -81,10 +81,10 @@ class FleetManagementTest extends TestCase
             'license_class' => 'D', 'license_expiry' => '2028-01-01', 'status' => 'active', 'max_weekly_hours' => 60,
         ];
 
-        $this->actingAs($this->supervisor())->post('/drivers', [...$data, 'nic' => '12345', 'phone' => '12345'])
+        $this->actingAs($this->admin())->post('/drivers', [...$data, 'nic' => '12345', 'phone' => '12345'])
             ->assertSessionHasErrors(['nic', 'phone']);
 
-        $this->actingAs($this->supervisor())->post('/drivers', [...$data, 'nic' => '851234567v', 'phone' => '0771234567'])
+        $this->actingAs($this->admin())->post('/drivers', [...$data, 'nic' => '851234567v', 'phone' => '0771234567'])
             ->assertSessionHasNoErrors();
 
         $this->assertSame('851234567V', Driver::first()->nic);

@@ -9,6 +9,11 @@
                 <x-badge :value="$trip->status" :label="$trip->status === TripStatus::Delayed ? 'Delayed '.$trip->delay_minutes.' min' : null" />
             </div>
         </x-slot:meta>
+        @can('correct-trips')
+            <x-slot:actions>
+                <a href="{{ route('trips.edit', $trip) }}" class="btn btn-primary"><x-icon name="edit" size="16" /> Edit trip</a>
+            </x-slot:actions>
+        @endcan
     </x-page-header>
 
     <div class="grid gap-6 xl:grid-cols-[1fr_400px]">
@@ -37,8 +42,8 @@
                     </li>
                 </ol>
                 <dl class="grid gap-x-8 gap-y-3 border-t border-line p-5 text-sm sm:grid-cols-2">
-                    <div><dt class="text-muted">Bus</dt><dd><a href="{{ route('buses.show', $trip->bus) }}" class="font-medium text-signal hover:underline">{{ $trip->bus->registration_no }}</a> · {{ $trip->bus->make }} {{ $trip->bus->model }} <x-badge :value="$trip->bus->status" class="ml-1" /></dd></div>
-                    <div><dt class="text-muted">Driver</dt><dd><a href="{{ route('drivers.show', $trip->driver) }}" class="font-medium text-signal hover:underline">{{ $trip->driver->full_name }}</a> · {{ $trip->driver->phone }}</dd></div>
+                    <div><dt class="text-muted">Bus</dt><dd><a href="{{ route('buses.show', $trip->bus) }}" class="font-medium text-signal hover:underline">{{ $trip->bus->registration_no }}</a> · {{ $trip->bus->make }} {{ $trip->bus->model }} <x-badge :value="$trip->bus->status" class="ml-1" />@if ($trip->bus->trashed()) <span class="text-[13px] text-muted">(removed from fleet)</span>@endif</dd></div>
+                    <div><dt class="text-muted">Driver</dt><dd><a href="{{ route('drivers.show', $trip->driver) }}" class="font-medium text-signal hover:underline">{{ $trip->driver->full_name }}</a> · {{ $trip->driver->phone }}@if ($trip->driver->trashed()) <span class="text-[13px] text-muted">(removed)</span>@endif</dd></div>
                     <div><dt class="text-muted">Odometer</dt><dd class="tabular-nums">
                         @if ($trip->odometer_start)
                             {{ number_format($trip->odometer_start) }} → {{ $trip->odometer_end ? number_format($trip->odometer_end).' km' : '…' }}
@@ -48,6 +53,9 @@
                         @endif
                     </dd></div>
                     <div><dt class="text-muted">Timetable</dt><dd>@if ($trip->schedule)<a href="{{ route('schedules.show', $trip->schedule) }}" class="text-signal hover:underline">{{ $trip->schedule->rule()->describe() }}</a>@else Extra trip @endif</dd></div>
+                    @if ($trip->remarks)
+                        <div class="sm:col-span-2"><dt class="text-muted">Remarks</dt><dd>{{ $trip->remarks }}</dd></div>
+                    @endif
                 </dl>
             </section>
 
@@ -65,9 +73,9 @@
                 @else
                     <ul class="divide-y divide-line">
                         @foreach ($trip->adjustments as $adjustment)
-                            <li class="flex gap-4 px-5 py-3 text-sm">
+                            <li class="flex gap-4 px-5 py-3 text-sm" x-data="{ editing: false }">
                                 <span class="w-14 shrink-0 text-muted tabular-nums">{{ $adjustment->created_at->format('H:i') }}</span>
-                                <div class="min-w-0 flex-1">
+                                <div class="min-w-0 flex-1" x-show="! editing">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <x-badge :value="$adjustment->type" />
                                         <span class="font-medium">{{ $adjustment->details }}</span>
@@ -77,6 +85,27 @@
                                         <span class="whitespace-nowrap">by {{ $adjustment->user?->name ?? 'system' }}</span>
                                     </div>
                                 </div>
+                                @can('correct-trips')
+                                    <div class="flex shrink-0 items-start gap-1" x-show="! editing">
+                                        <button type="button" class="btn btn-ghost btn-sm" @click="editing = true" aria-label="Edit entry"><x-icon name="edit" size="15" /></button>
+                                        <form method="POST" action="{{ route('trips.activity.destroy', [$trip, $adjustment]) }}" onsubmit="return confirm('Delete this activity entry?')">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-ghost btn-sm" aria-label="Delete entry"><x-icon name="trash" size="15" /></button>
+                                        </form>
+                                    </div>
+                                    <form x-show="editing" x-cloak method="POST" action="{{ route('trips.activity.update', [$trip, $adjustment]) }}" class="min-w-0 flex-1 space-y-3">
+                                        @csrf @method('PUT')
+                                        <x-form.input name="details" :id="'details-'.$adjustment->id" label="Details" :value="$adjustment->details" maxlength="191" required />
+                                        <div class="grid gap-3 sm:grid-cols-2">
+                                            <x-form.select name="reason" :id="'reason-'.$adjustment->id" label="Reason" :options="$reasons" :value="$adjustment->reason" placeholder="None" />
+                                            <x-form.input name="note" :id="'note-'.$adjustment->id" label="Note" :value="$adjustment->note" />
+                                        </div>
+                                        <div class="flex justify-end gap-2">
+                                            <button type="button" class="btn btn-secondary btn-sm" @click="editing = false">Cancel</button>
+                                            <button class="btn btn-primary btn-sm"><x-icon name="check" size="14" /> Save</button>
+                                        </div>
+                                    </form>
+                                @endcan
                             </li>
                         @endforeach
                     </ul>
@@ -84,102 +113,122 @@
             </section>
         </div>
 
-        {{-- Actions --}}
-        @can('operate-trips')
+        {{-- Actions: staff run the trip, supervisors assign buses and drivers, both can report delays --}}
+        @php
+            $tabs = array_filter([
+                'delay' => auth()->user()->can('record-delays') ? 'Delay' : null,
+                'reassign' => auth()->user()->can('assign-trips') ? 'Swap bus/driver' : null,
+                'cancel' => auth()->user()->can('operate-trips') ? 'Cancel' : null,
+            ]);
+        @endphp
+        @if ($tabs)
             <aside class="space-y-4 xl:sticky xl:top-24 xl:self-start">
                 @if ($trip->status->isOpen())
-                    @if (! $trip->hasDeparted() && $trip->trip_date->isAfter(today()))
-                        <section class="panel p-5 text-sm text-muted">
-                            Departure and arrival can be recorded on {{ $trip->trip_date->format('l j F') }}. You can still adjust or reassign the trip now.
-                        </section>
-                    @elseif (! $trip->hasDeparted())
-                        <section class="panel">
-                            <div class="panel-head"><h2 class="panel-title">Record departure</h2></div>
-                            <form method="POST" action="{{ route('trips.depart', $trip) }}" class="space-y-4 p-5">
-                                @csrf
-                                <div class="grid grid-cols-2 gap-3">
-                                    <x-form.input name="time" label="Time" type="time" :value="now()->format('H:i')" hint="Defaults to now" />
-                                    <x-form.input name="odometer" label="Odometer" type="number" :value="$trip->bus->current_mileage" suffix="km" />
-                                </div>
-                                <button class="btn btn-primary w-full"><x-icon name="play" size="16" /> Record departure</button>
-                            </form>
-                        </section>
-                    @else
-                        <section class="panel">
-                            <div class="panel-head"><h2 class="panel-title">Record arrival</h2></div>
-                            <form method="POST" action="{{ route('trips.arrive', $trip) }}" class="space-y-4 p-5">
-                                @csrf
-                                <div class="grid grid-cols-2 gap-3">
-                                    <x-form.input name="time" label="Time" type="time" :value="now()->format('H:i')" />
-                                    <x-form.input name="odometer" label="Odometer" type="number" :min="$trip->odometer_start" :value="$trip->odometer_start ? $trip->odometer_start + (int) round($trip->route->distance_km) : null" suffix="km" />
-                                </div>
-                                <x-form.input name="passengers" label="Passengers carried" type="number" min="0" />
-                                <button class="btn btn-primary w-full"><x-icon name="flag" size="16" /> Mark as completed</button>
-                            </form>
-                        </section>
-                    @endif
+                    @can('operate-trips')
+                        @if (! $trip->hasDeparted() && $trip->trip_date->isAfter(today()))
+                            <section class="panel p-5 text-sm text-muted">
+                                Departure and arrival can be recorded on {{ $trip->trip_date->format('l j F') }}. You can still adjust the trip now.
+                            </section>
+                        @elseif (! $trip->hasDeparted())
+                            <section class="panel">
+                                <div class="panel-head"><h2 class="panel-title">Record departure</h2></div>
+                                <form method="POST" action="{{ route('trips.depart', $trip) }}" class="space-y-4 p-5">
+                                    @csrf
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <x-form.input name="time" label="Time" type="time" :value="now()->format('H:i')" hint="Defaults to now" />
+                                        <x-form.input name="odometer" label="Odometer" type="number" :value="$trip->bus->current_mileage" suffix="km" />
+                                    </div>
+                                    <button class="btn btn-primary w-full"><x-icon name="play" size="16" /> Record departure</button>
+                                </form>
+                            </section>
+                        @else
+                            <section class="panel">
+                                <div class="panel-head"><h2 class="panel-title">Record arrival</h2></div>
+                                <form method="POST" action="{{ route('trips.arrive', $trip) }}" class="space-y-4 p-5">
+                                    @csrf
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <x-form.input name="time" label="Time" type="time" :value="now()->format('H:i')" />
+                                        <x-form.input name="odometer" label="Odometer" type="number" :min="$trip->odometer_start" :value="$trip->odometer_start ? $trip->odometer_start + (int) round($trip->route->distance_km) : null" suffix="km" />
+                                    </div>
+                                    <x-form.input name="passengers" label="Passengers carried" type="number" min="0" />
+                                    <button class="btn btn-primary w-full"><x-icon name="flag" size="16" /> Mark as completed</button>
+                                </form>
+                            </section>
+                        @endif
+                    @endcan
 
-                    <section class="panel" x-data="{ tab: 'delay' }">
+                    <section class="panel" x-data="{ tab: @js(array_key_first($tabs)) }">
                         <div class="panel-head"><h2 class="panel-title">Adjust this trip</h2></div>
-                        <div class="flex border-b border-line px-5 text-sm" role="tablist">
-                            @foreach (['delay' => 'Delay', 'reassign' => 'Swap bus/driver', 'cancel' => 'Cancel'] as $key => $label)
-                                <button type="button" role="tab" @click="tab = '{{ $key }}'" :aria-selected="tab === '{{ $key }}'"
-                                        class="-mb-px border-b-2 px-3 py-2.5 font-medium" :class="tab === '{{ $key }}' ? 'border-signal text-ink' : 'border-transparent text-muted hover:text-ink'">{{ $label }}</button>
-                            @endforeach
-                        </div>
-
-                        <form x-show="tab === 'delay'" method="POST" action="{{ route('trips.delay', $trip) }}" class="space-y-4 p-5">
-                            @csrf
-                            <x-form.input name="minutes" label="Expected delay" type="number" min="1" max="600" :value="$trip->delay_minutes ?: 10" suffix="min" required />
-                            <x-form.select name="reason" id="delay-reason" label="Reason" :options="$reasons" value="traffic" required />
-                            <x-form.input name="note" id="delay-note" label="Note" placeholder="Optional" />
-                            <button class="btn btn-secondary w-full"><x-icon name="timer" size="16" /> Report delay</button>
-                        </form>
-
-                        <form x-show="tab === 'reassign'" x-cloak method="POST" action="{{ route('trips.reassign', $trip) }}" class="space-y-4 p-5">
-                            @csrf
-                            <p class="text-[13px] text-muted">Use when a bus breaks down or a driver is unavailable. Busy buses and drivers are marked.</p>
-                            <div>
-                                <label for="reassign-bus" class="field-label">Replacement bus</label>
-                                <select id="reassign-bus" name="bus_id" class="control">
-                                    <option value="">Keep {{ $trip->bus->registration_no }}</option>
-                                    @foreach ($buses as ['model' => $bus, 'busy' => $busy])
-                                        @continue($bus->id === $trip->bus_id)
-                                        <option value="{{ $bus->id }}" @disabled(! $bus->status->isOperational())>
-                                            {{ $bus->registration_no }} · {{ $bus->seating_capacity }} seats{{ $busy ? ' — busy' : '' }}{{ ! $bus->status->isOperational() ? ' — '.$bus->status->label() : '' }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                        @if (count($tabs) > 1)
+                            <div class="flex border-b border-line px-5 text-sm" role="tablist">
+                                @foreach ($tabs as $key => $label)
+                                    <button type="button" role="tab" @click="tab = '{{ $key }}'" :aria-selected="tab === '{{ $key }}'"
+                                            class="-mb-px border-b-2 px-3 py-2.5 font-medium" :class="tab === '{{ $key }}' ? 'border-signal text-ink' : 'border-transparent text-muted hover:text-ink'">{{ $label }}</button>
+                                @endforeach
                             </div>
-                            <div>
-                                <label for="reassign-driver" class="field-label">Replacement driver</label>
-                                <select id="reassign-driver" name="driver_id" class="control">
-                                    <option value="">Keep {{ $trip->driver->full_name }}</option>
-                                    @foreach ($drivers as ['model' => $driver, 'busy' => $busy])
-                                        @continue($driver->id === $trip->driver_id)
-                                        <option value="{{ $driver->id }}">{{ $driver->full_name }}{{ $busy ? ' — busy' : '' }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <x-form.select name="reason" id="reassign-reason" label="Reason" :options="$reasons" value="breakdown" required />
-                            <x-form.input name="note" id="reassign-note" label="Note" placeholder="Optional" />
-                            <button class="btn btn-secondary w-full"><x-icon name="swap" size="16" /> Swap</button>
-                        </form>
+                        @endif
 
-                        <form x-show="tab === 'cancel'" x-cloak method="POST" action="{{ route('trips.cancel', $trip) }}" class="space-y-4 p-5"
-                              @submit="if (! confirm('Cancel this trip? This cannot be undone.')) $event.preventDefault()">
-                            @csrf
-                            <x-form.select name="reason" id="cancel-reason" label="Reason" :options="$reasons" value="breakdown" required />
-                            <x-form.input name="note" id="cancel-note" label="Note" placeholder="Optional" />
-                            <button class="btn btn-danger w-full"><x-icon name="ban" size="16" /> Cancel trip</button>
-                        </form>
+                        @isset($tabs['delay'])
+                            <form x-show="tab === 'delay'" method="POST" action="{{ route('trips.delay', $trip) }}" class="space-y-4 p-5">
+                                @csrf
+                                <x-form.input name="minutes" label="Expected delay" type="number" min="1" max="600" :value="$trip->delay_minutes ?: 10" suffix="min" required />
+                                <x-form.select name="reason" id="delay-reason" label="Reason" :options="$reasons" value="traffic" required />
+                                <x-form.input name="note" id="delay-note" label="Note" placeholder="Optional" />
+                                <button class="btn btn-secondary w-full"><x-icon name="timer" size="16" /> Report delay</button>
+                            </form>
+                        @endisset
+
+                        @isset($tabs['reassign'])
+                            <form x-show="tab === 'reassign'" x-cloak method="POST" action="{{ route('trips.reassign', $trip) }}" class="space-y-4 p-5">
+                                @csrf
+                                <p class="text-[13px] text-muted">Use when a bus breaks down or a driver is unavailable. Busy buses and drivers are marked.</p>
+                                <div>
+                                    <label for="reassign-bus" class="field-label">Replacement bus</label>
+                                    <select id="reassign-bus" name="bus_id" class="control">
+                                        <option value="">Keep {{ $trip->bus->registration_no }}</option>
+                                        @foreach ($buses as ['model' => $bus, 'busy' => $busy])
+                                            @continue($bus->id === $trip->bus_id)
+                                            <option value="{{ $bus->id }}" @disabled(! $bus->status->isOperational())>
+                                                {{ $bus->registration_no }} · {{ $bus->seating_capacity }} seats{{ $busy ? ' — busy' : '' }}{{ ! $bus->status->isOperational() ? ' — '.$bus->status->label() : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="reassign-driver" class="field-label">Replacement driver</label>
+                                    <select id="reassign-driver" name="driver_id" class="control">
+                                        <option value="">Keep {{ $trip->driver->full_name }}</option>
+                                        @foreach ($drivers as ['model' => $driver, 'busy' => $busy])
+                                            @continue($driver->id === $trip->driver_id)
+                                            <option value="{{ $driver->id }}">{{ $driver->full_name }}{{ $busy ? ' — busy' : '' }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <x-form.select name="reason" id="reassign-reason" label="Reason" :options="$reasons" value="breakdown" required />
+                                <x-form.input name="note" id="reassign-note" label="Note" placeholder="Optional" />
+                                <button class="btn btn-secondary w-full"><x-icon name="swap" size="16" /> Swap</button>
+                            </form>
+                        @endisset
+
+                        @isset($tabs['cancel'])
+                            <form x-show="tab === 'cancel'" x-cloak method="POST" action="{{ route('trips.cancel', $trip) }}" class="space-y-4 p-5"
+                                  @submit="if (! confirm('Cancel this trip? This cannot be undone.')) $event.preventDefault()">
+                                @csrf
+                                <x-form.select name="reason" id="cancel-reason" label="Reason" :options="$reasons" value="breakdown" required />
+                                <x-form.input name="note" id="cancel-note" label="Note" placeholder="Optional" />
+                                <button class="btn btn-danger w-full"><x-icon name="ban" size="16" /> Cancel trip</button>
+                            </form>
+                        @endisset
                     </section>
                 @else
                     <section class="panel p-5 text-sm text-muted">
                         This trip is {{ mb_strtolower($trip->status->label()) }} and can no longer be changed.
+                        @can('correct-trips')
+                            Use <a href="{{ route('trips.edit', $trip) }}" class="font-medium text-signal hover:underline">Edit trip</a> to correct the record.
+                        @endcan
                     </section>
                 @endif
             </aside>
-        @endcan
+        @endif
     </div>
 </x-layouts.app>

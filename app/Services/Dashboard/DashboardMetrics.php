@@ -14,6 +14,7 @@ use App\Models\Trip;
 use App\Services\Fleet\MaintenanceService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Read-only figures for the Depot Management Dashboard.
@@ -147,7 +148,7 @@ class DashboardMetrics
                 'tone' => 'amber',
                 'title' => "Overdue maintenance: {$job->title}",
                 'detail' => "{$job->bus->registration_no}, planned for ".$job->scheduled_for->format('j M'),
-                'url' => route('maintenance.edit', $job),
+                'url' => Gate::allows('log-fuel-maintenance') ? route('maintenance.edit', $job) : route('maintenance.index', ['bus' => $job->bus_id]),
             ];
         }
 

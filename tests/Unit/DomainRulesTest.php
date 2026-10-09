@@ -26,10 +26,20 @@ class DomainRulesTest extends TestCase
     {
         $this->assertTrue(UserRole::Admin->can(Permission::ManageUsers));
         $this->assertFalse(UserRole::Supervisor->can(Permission::ManageUsers));
-        $this->assertTrue(UserRole::Supervisor->can(Permission::ManageSchedules));
+        $this->assertFalse(UserRole::Supervisor->can(Permission::ManageSchedules));
+        $this->assertFalse(UserRole::Supervisor->can(Permission::ManageFleet));
+        $this->assertTrue(UserRole::Supervisor->can(Permission::AssignTrips));
+        $this->assertTrue(UserRole::Supervisor->can(Permission::RecordDelays));
+        $this->assertFalse(UserRole::Supervisor->can(Permission::OperateTrips));
+        $this->assertFalse(UserRole::Supervisor->can(Permission::LogFuelAndMaintenance));
+        $this->assertFalse(UserRole::Supervisor->can(Permission::ViewManagementReports));
         $this->assertTrue(UserRole::Staff->can(Permission::OperateTrips));
+        $this->assertTrue(UserRole::Staff->can(Permission::LogFuelAndMaintenance));
+        $this->assertFalse(UserRole::Staff->can(Permission::AssignTrips));
+        $this->assertFalse(UserRole::Staff->can(Permission::ManageFuelAndMaintenance));
         $this->assertFalse(UserRole::Staff->can(Permission::ManageRoutes));
         $this->assertFalse(UserRole::Staff->can(Permission::ViewReports));
+        $this->assertTrue(UserRole::Admin->can(Permission::CorrectTrips));
     }
 
     public function test_distance_between_colombo_and_kandy_is_about_95_km_in_a_straight_line(): void

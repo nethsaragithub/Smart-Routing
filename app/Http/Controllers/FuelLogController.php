@@ -83,9 +83,9 @@ class FuelLogController extends Controller
     {
         return view('fuel.form', [
             'log' => $log,
-            'buses' => Bus::query()->orderBy('registration_no')->get(),
-            'drivers' => Driver::query()->active()->orderBy('full_name')->get(),
-            'routes' => BusRoute::query()->orderByRaw('LENGTH(route_no), route_no')->get(),
+            'buses' => $this->withCurrent(Bus::query()->orderBy('registration_no')->get(), $log->bus),
+            'drivers' => $this->withCurrent(Driver::query()->active()->orderBy('full_name')->get(), $log->driver),
+            'routes' => $this->withCurrent(BusRoute::query()->orderByRaw('LENGTH(route_no), route_no')->get(), $log->route),
         ]);
     }
 }

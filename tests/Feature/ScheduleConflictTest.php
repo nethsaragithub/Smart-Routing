@@ -19,7 +19,7 @@ class ScheduleConflictTest extends TestCase
 
     public function test_valid_timetable_is_saved_and_trips_are_generated(): void
     {
-        $response = $this->actingAs($this->supervisor())->post('/schedules', $this->scheduleForm());
+        $response = $this->actingAs($this->admin())->post('/schedules', $this->scheduleForm());
 
         $schedule = Schedule::first();
         $response->assertRedirect("/schedules/{$schedule->id}");
@@ -31,7 +31,7 @@ class ScheduleConflictTest extends TestCase
     {
         $existing = $this->schedule(['departure_time' => '06:00', 'arrival_time' => '07:00']);
 
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->post('/schedules', $this->scheduleForm(['bus_id' => $existing->bus_id, 'departure_time' => '06:30', 'arrival_time' => '07:30']))
             ->assertSessionHas('conflicts', fn ($c) => str_contains($c['errors'][0]->message, 'is already running route'));
 
@@ -43,12 +43,12 @@ class ScheduleConflictTest extends TestCase
         $existing = $this->schedule(['departure_time' => '06:00', 'arrival_time' => '07:00']);
 
         // Leaves 10 minutes after the previous trip ends: inside the 15-minute turnaround.
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->post('/schedules', $this->scheduleForm(['bus_id' => $existing->bus_id, 'departure_time' => '07:10', 'arrival_time' => '08:10']))
             ->assertSessionHas('conflicts');
 
         // Leaving 20 minutes later is fine.
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->post('/schedules', $this->scheduleForm(['bus_id' => $existing->bus_id, 'departure_time' => '07:20', 'arrival_time' => '08:20']))
             ->assertSessionMissing('conflicts');
 
@@ -59,7 +59,7 @@ class ScheduleConflictTest extends TestCase
     {
         $existing = $this->schedule(['departure_time' => '06:00', 'arrival_time' => '07:00']);
 
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->post('/schedules', $this->scheduleForm(['driver_id' => $existing->driver_id, 'departure_time' => '07:15', 'arrival_time' => '08:15']))
             ->assertSessionHas('conflicts', fn ($c) => str_contains($c['errors'][0]->message, 'rest between trips'));
     }
@@ -68,7 +68,7 @@ class ScheduleConflictTest extends TestCase
     {
         $existing = $this->schedule(['departure_time' => '06:00', 'arrival_time' => '07:00']);
 
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->post('/schedules', $this->scheduleForm(['bus_route_id' => $existing->bus_route_id, 'departure_time' => '06:05', 'arrival_time' => '07:05']))
             ->assertSessionHas('conflicts', fn ($c) => str_contains($c['errors'][0]->message, 'at least 10 minutes apart'));
     }
@@ -77,7 +77,7 @@ class ScheduleConflictTest extends TestCase
     {
         $existing = $this->schedule(['recurrence' => 'weekly', 'weekdays' => [6, 7]]); // weekends
 
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->post('/schedules', $this->scheduleForm(['bus_id' => $existing->bus_id, 'recurrence' => 'weekly', 'weekdays' => [1, 2, 3, 4, 5]]))
             ->assertSessionMissing('conflicts');
 
@@ -88,7 +88,7 @@ class ScheduleConflictTest extends TestCase
     {
         $driver = $this->driver(['license_expiry' => '2026-10-01']);
 
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->post('/schedules', $this->scheduleForm(['driver_id' => $driver->id]))
             ->assertSessionHas('conflicts', fn ($c) => str_contains($c['errors'][0]->message, 'licence expired'));
     }
@@ -97,7 +97,7 @@ class ScheduleConflictTest extends TestCase
     {
         $bus = $this->bus(['status' => BusStatus::Maintenance]);
 
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->post('/schedules', $this->scheduleForm(['bus_id' => $bus->id]))
             ->assertSessionHas('conflicts');
 
@@ -108,7 +108,7 @@ class ScheduleConflictTest extends TestCase
     {
         $route = $this->route(['service_type' => ServiceType::Luxury]);
 
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->post('/schedules', $this->scheduleForm(['bus_route_id' => $route->id]))
             ->assertSessionHas('conflicts', fn ($c) => str_contains($c['errors'][0]->message, 'luxury'));
     }
@@ -118,17 +118,17 @@ class ScheduleConflictTest extends TestCase
         $route = $this->route(['min_capacity' => 60]);   // bus only seats 54: a warning, not an error
         $form = $this->scheduleForm(['bus_route_id' => $route->id]);
 
-        $this->actingAs($this->supervisor())->post('/schedules', $form)
+        $this->actingAs($this->admin())->post('/schedules', $form)
             ->assertSessionHas('conflicts', fn ($c) => $c['errors'] === [] && count($c['warnings']) === 1);
         $this->assertSame(0, Schedule::count());
 
-        $this->actingAs($this->supervisor())->post('/schedules', [...$form, 'acknowledge_warnings' => 1]);
+        $this->actingAs($this->admin())->post('/schedules', [...$form, 'acknowledge_warnings' => 1]);
         $this->assertSame(1, Schedule::count());
     }
 
     public function test_arrival_must_be_after_departure(): void
     {
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->post('/schedules', $this->scheduleForm(['departure_time' => '09:00', 'arrival_time' => '08:00']))
             ->assertSessionHasErrors('arrival_time');
     }
@@ -137,7 +137,7 @@ class ScheduleConflictTest extends TestCase
     {
         $existing = $this->schedule();
 
-        $this->actingAs($this->supervisor())
+        $this->actingAs($this->admin())
             ->postJson('/schedules/check', $this->scheduleForm(['bus_id' => $existing->bus_id]))
             ->assertOk()
             ->assertJsonPath('clear', false)
@@ -146,10 +146,10 @@ class ScheduleConflictTest extends TestCase
 
     public function test_suspending_a_timetable_removes_its_upcoming_trips(): void
     {
-        $this->actingAs($this->supervisor())->post('/schedules', $this->scheduleForm());
+        $this->actingAs($this->admin())->post('/schedules', $this->scheduleForm());
         $schedule = Schedule::first();
 
-        $this->actingAs($this->supervisor())->patch("/schedules/{$schedule->id}/status");
+        $this->actingAs($this->admin())->patch("/schedules/{$schedule->id}/status");
 
         $this->assertSame('suspended', $schedule->fresh()->status->value);
         $this->assertSame(0, $schedule->trips()->count());

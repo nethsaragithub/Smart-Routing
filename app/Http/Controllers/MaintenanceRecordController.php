@@ -127,7 +127,7 @@ class MaintenanceRecordController extends Controller
     {
         return view('maintenance.form', [
             'record' => $record,
-            'buses' => Bus::query()->orderBy('registration_no')->get(),
+            'buses' => $this->withCurrent(Bus::query()->orderBy('registration_no')->get(), $record->bus),
             'types' => MaintenanceType::options(),
             'categories' => MaintenanceCategory::options(),
         ]);

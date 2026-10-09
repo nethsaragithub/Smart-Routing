@@ -101,6 +101,12 @@ class BusController extends Controller
             return back()->with('error', "{$bus->registration_no} is on active timetables. Reassign them before removing the bus.");
         }
 
+        if ($upcoming = $bus->trips()->open()->whereDate('trip_date', '>=', today())->count()) {
+            return back()->with('error', "{$bus->registration_no} still has {$upcoming} upcoming trip(s). Swap them to another bus before removing it.");
+        }
+
+        // Soft delete: past trips, fuel fills and maintenance jobs keep pointing at this bus.
+
         $bus->delete();
 
         return redirect()->route('buses.index')->with('success', "Bus {$bus->registration_no} removed from the fleet. Its history is kept.");

@@ -25,6 +25,11 @@ class FuelConsumptionReport extends Report
         return 'Fuel used and spent per bus, with economy by route and by driver.';
     }
 
+    public static function forManagement(): bool
+    {
+        return true;
+    }
+
     public function columns(): array
     {
         return [

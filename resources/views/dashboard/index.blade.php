@@ -1,9 +1,8 @@
+@php $canBrowse = auth()->user()->can('view-depot-records'); @endphp
 <x-layouts.app title="Dashboard">
     <x-page-header title="Depot dashboard" :subtitle="'Operations for '.$today->format('l j F').' at '.($currentDepot?->name ?? 'your depot').'.'">
         <x-slot:actions>
-            @can('operate-trips')
-                <a href="{{ route('trips.index') }}" class="btn btn-secondary"><x-icon name="clock" size="16" /> Today's trips</a>
-            @endcan
+            <a href="{{ route('trips.index') }}" class="btn btn-secondary"><x-icon name="clock" size="16" /> Today's trips</a>
             @can('manage-schedules')
                 <a href="{{ route('schedules.create') }}" class="btn btn-primary"><x-icon name="plus" size="16" /> New timetable</a>
             @endcan
@@ -12,9 +11,9 @@
 
     {{-- Key figures --}}
     <section class="panel mb-6 grid grid-cols-2 gap-px overflow-hidden bg-line md:grid-cols-3 xl:grid-cols-6" aria-label="Key figures">
-        <x-stat label="Active routes" :value="$stats['routes_active']" :hint="'of '.$stats['routes_total'].' routes'" :href="route('routes.index')" />
-        <x-stat label="Buses available now" :value="$stats['buses_available']" :hint="$stats['buses_on_road'].' on the road · '.$stats['buses_in_maintenance'].' in workshop'" :href="route('buses.index')" />
-        <x-stat label="Drivers on duty today" :value="$stats['drivers_on_duty']" :hint="'of '.$stats['drivers_active'].' active drivers'" :href="route('drivers.index')" />
+        <x-stat label="Active routes" :value="$stats['routes_active']" :hint="'of '.$stats['routes_total'].' routes'" :href="$canBrowse ? route('routes.index') : null" />
+        <x-stat label="Buses available now" :value="$stats['buses_available']" :hint="$stats['buses_on_road'].' on the road · '.$stats['buses_in_maintenance'].' in workshop'" :href="$canBrowse ? route('buses.index') : null" />
+        <x-stat label="Drivers on duty today" :value="$stats['drivers_on_duty']" :hint="'of '.$stats['drivers_active'].' active drivers'" :href="$canBrowse ? route('drivers.index') : null" />
         <x-stat label="Trips today" :value="$stats['trips_total']" :hint="$stats['trips_by_status']['completed'].' completed so far'" :href="route('trips.index')" />
         <x-stat label="On-time departures" :value="$stats['on_time_rate'] !== null ? $stats['on_time_rate'].'%' : '–'" hint="Within 5 minutes of schedule" />
         <x-stat label="Fleet utilisation" :value="$stats['utilisation_rate'] !== null ? $stats['utilisation_rate'].'%' : '–'" hint="Active buses used today" />

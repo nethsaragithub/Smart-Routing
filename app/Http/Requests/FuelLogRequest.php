@@ -18,13 +18,18 @@ class FuelLogRequest extends FormRequest
 
     public function rules(): array
     {
-        $depotId = $this->route('fuelLog')?->depot_id ?? app(DepotContext::class)->id();
-        $inDepot = fn (string $table) => Rule::exists($table, 'id')->where('depot_id', $depotId);
+        $log = $this->route('fuelLog');
+        $depotId = $log?->depot_id ?? app(DepotContext::class)->id();
+
+        // Removed buses, drivers and routes cannot be chosen, but an edited entry may keep its own.
+        $inDepot = fn (string $table, ?int $keep) => Rule::exists($table, 'id')
+            ->where('depot_id', $depotId)
+            ->where(fn ($q) => $q->whereNull('deleted_at')->when($keep, fn ($q) => $q->orWhere('id', $keep)));
 
         return [
-            'bus_id' => ['required', $inDepot('buses')],
-            'driver_id' => ['nullable', $inDepot('drivers')],
-            'bus_route_id' => ['nullable', $inDepot('bus_routes')],
+            'bus_id' => ['required', $inDepot('buses', $log?->bus_id)],
+            'driver_id' => ['nullable', $inDepot('drivers', $log?->driver_id)],
+            'bus_route_id' => ['nullable', $inDepot('bus_routes', $log?->bus_route_id)],
             'filled_on' => ['required', 'date', 'before_or_equal:today'],
             'odometer' => ['required', 'integer', 'min:0'],
             'litres' => ['required', 'numeric', 'min:1', 'max:600'],

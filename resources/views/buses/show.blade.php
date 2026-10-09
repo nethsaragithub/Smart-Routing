@@ -1,6 +1,6 @@
 @php $km = $bus->kmToNextService(); @endphp
 <x-layouts.app :title="'Bus '.$bus->registration_no">
-    <x-page-header :title="$bus->registration_no" :subtitle="$bus->make.' '.$bus->model.($bus->year_of_manufacture ? ', '.$bus->year_of_manufacture : '').($bus->fleet_no ? ' · Fleet no. '.$bus->fleet_no : '')" :back="route('buses.index')">
+    <x-page-header :title="$bus->registration_no" :subtitle="$bus->make.' '.$bus->model.($bus->year_of_manufacture ? ', '.$bus->year_of_manufacture : '').($bus->fleet_no ? ' · Fleet no. '.$bus->fleet_no : '')" :back="auth()->user()->can('view-depot-records') ? route('buses.index') : url()->previous()">
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap gap-2">
                 <x-badge :value="$bus->status" />
@@ -8,15 +8,19 @@
             </div>
         </x-slot:meta>
         <x-slot:actions>
-            @can('log-fuel-maintenance')
-                <a href="{{ route('fuel.create', ['bus' => $bus->id]) }}" class="btn btn-secondary"><x-icon name="fuel" size="16" /> Log fuel</a>
-                <a href="{{ route('maintenance.create', ['bus' => $bus->id]) }}" class="btn btn-secondary"><x-icon name="wrench" size="16" /> Log maintenance</a>
-            @endcan
-            @can('manage-fleet')
-                <a href="{{ route('buses.edit', $bus) }}" class="btn btn-primary"><x-icon name="edit" size="16" /> Edit</a>
-            @endcan
+            @if (! $bus->trashed())
+                @can('log-fuel-maintenance')
+                    <a href="{{ route('fuel.create', ['bus' => $bus->id]) }}" class="btn btn-secondary"><x-icon name="fuel" size="16" /> Log fuel</a>
+                    <a href="{{ route('maintenance.create', ['bus' => $bus->id]) }}" class="btn btn-secondary"><x-icon name="wrench" size="16" /> Log maintenance</a>
+                @endcan
+                @can('manage-fleet')
+                    <a href="{{ route('buses.edit', $bus) }}" class="btn btn-primary"><x-icon name="edit" size="16" /> Edit</a>
+                @endcan
+            @endif
         </x-slot:actions>
     </x-page-header>
+
+    <x-removed-notice :model="$bus" what="This bus" />
 
     <section class="panel mb-6 grid grid-cols-2 gap-px overflow-hidden bg-line lg:grid-cols-5">
         <x-stat label="Odometer" :value="number_format($bus->current_mileage)" hint="km" />
@@ -116,9 +120,9 @@
         </section>
     </div>
 
-    @can('manage-fleet')
+    @if (! $bus->trashed() && auth()->user()->can('manage-fleet'))
         <div class="mt-6">
             <x-delete-button :action="route('buses.destroy', $bus)" label="Remove bus" confirm="Remove this bus from the fleet? Its history is kept for reports." />
         </div>
-    @endcan
+    @endif
 </x-layouts.app>

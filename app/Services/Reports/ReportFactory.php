@@ -32,12 +32,15 @@ class ReportFactory
     }
 
     /** @return Collection<int, array{key: string, title: string, description: string}> */
-    public function available(): Collection
+    public function available(bool $includeManagement = true): Collection
     {
-        return collect(self::REPORTS)->map(fn (string $class) => [
-            'key' => $class::key(),
-            'title' => $class::title(),
-            'description' => $class::description(),
-        ]);
+        return collect(self::REPORTS)
+            ->filter(fn (string $class) => $includeManagement || ! $class::forManagement())
+            ->map(fn (string $class) => [
+                'key' => $class::key(),
+                'title' => $class::title(),
+                'description' => $class::description(),
+            ])
+            ->values();
     }
 }

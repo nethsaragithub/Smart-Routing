@@ -28,6 +28,12 @@ abstract class Report
 
     abstract public static function description(): string;
 
+    /** Cost reports for management; supervisors only see the operational ones. */
+    public static function forManagement(): bool
+    {
+        return false;
+    }
+
     /**
      * Column definitions: key => [label, format]. Formats: text, int, dec, pct, lkr.
      *

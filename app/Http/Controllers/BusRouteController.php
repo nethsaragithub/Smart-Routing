@@ -89,6 +89,10 @@ class BusRouteController extends Controller
             return back()->with('error', 'This route still has active timetables. Suspend or delete them first, or mark the route inactive.');
         }
 
+        if ($route->trips()->open()->whereDate('trip_date', '>=', today())->exists()) {
+            return back()->with('error', 'This route still has upcoming trips. Cancel them first, or mark the route inactive.');
+        }
+
         $route->delete();
 
         return redirect()->route('routes.index')->with('success', "Route {$route->route_no} deleted.");
