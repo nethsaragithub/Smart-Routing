@@ -5,6 +5,7 @@ import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 import { motionEnabled } from '../lib/prefs';
 import { initBackdrop } from './backdrop';
+import { initHeadlight } from './headlight';
 import { initInteractions } from './interactions';
 import { liveClocks, revealLogin } from './login';
 import { flaps, headerScroll, revealPage, rows } from './reveal';
@@ -36,11 +37,14 @@ export async function startMotion() {
 
     const intro = gsap.timeline({ defaults: { ease: 'expo.out' } });
     let stopBackdrop = () => {};
+    let stopHeadlight = () => {};
     let ambient = false;
 
     // Effects that can be switched on mid-page from the header toggle.
     const startAmbient = (options) => {
         stopBackdrop = initBackdrop(options);
+        stopHeadlight();
+        stopHeadlight = initHeadlight();
         if (ambient) return;
         ambient = true;
         headerScroll();
@@ -55,6 +59,7 @@ export async function startMotion() {
         } else {
             disableTransitions();
             stopBackdrop();
+            stopHeadlight();
             intro.progress(1);
             gsap.killTweensOf('[data-blink], [data-route-bus]');
             gsap.set('[data-blink]', { clearProps: 'opacity' });

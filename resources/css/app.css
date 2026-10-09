@@ -416,6 +416,53 @@
     }
 }
 
+/* Headlight (resources/js/motion/headlight.js): an amber beam and ring that follow the pointer.
+   Above modals so it lights them too, below the page-transition curtain. */
+.headlight {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.headlight-beam,
+.headlight-ring {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-radius: 9999px;
+    will-change: transform;
+}
+
+.headlight-beam {
+    width: 640px;
+    height: 640px;
+    margin: -320px 0 0 -320px;
+    background: radial-gradient(circle, rgb(255 184 28 / 0.14), rgb(255 184 28 / 0.05) 32%, transparent 68%);
+}
+
+.dark .headlight-beam {
+    background: radial-gradient(circle, rgb(255 184 28 / 0.13), rgb(255 184 28 / 0.045) 32%, transparent 68%);
+    mix-blend-mode: screen;
+}
+
+.headlight-ring {
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border: 1.5px solid rgb(255 184 28 / 0.75);
+    background: rgb(255 184 28 / 0.1);
+    box-shadow: 0 0 16px rgb(255 184 28 / 0.45);
+    transition: background-color 0.25s, border-color 0.25s;
+}
+
+.headlight.is-hovering .headlight-ring {
+    border-color: rgb(255 184 28 / 0.95);
+    background: rgb(255 184 28 / 0.16);
+}
+
 /* Leaflet stop markers */
 .stop-marker {
     @apply flex items-center justify-center rounded-full bg-white text-ink font-display font-bold text-[13px];
@@ -478,6 +525,7 @@
 @media print {
     .backdrop,
     .curtain,
+    .headlight,
     .scroll-progress {
         display: none !important;
     }
