@@ -353,26 +353,51 @@
     opacity: 0.35;
 }
 
-/* Page-transition curtain (components/curtain.blade.php).
+/* Page transition (components/curtain.blade.php): the page blurs behind a bus driving across.
+   Starts blurred with the bus parked mid-screen, where the previous page left it.
    Failsafe: if the script never takes over, the curtain hides itself. */
 .curtain {
+    --bus-w: min(260px, 62vw);
     position: fixed;
     inset: 0;
     z-index: 70;
-    display: grid;
-    place-items: center;
+    overflow: hidden;
     pointer-events: none;
-    background:
-        radial-gradient(circle at 50% 50%, rgb(255 184 28 / 0.08), transparent 40%),
-        var(--color-depot);
-    box-shadow: inset 6px 0 0 var(--color-board-amber), inset -6px 0 0 var(--color-board-amber);
+    color: var(--color-ink);
     animation: curtain-failsafe 0s linear 1.6s forwards;
 }
 
-.curtain .route-board {
-    height: 3.25rem;
-    padding: 0 0.9rem;
-    font-size: 2rem;
+.curtain-blur {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--color-paper) 40%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(14px) saturate(1.2);
+}
+
+.curtain-road {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(50% + var(--bus-w) * 110 / 260 / 2 - var(--bus-w) * 10 / 260);
+    height: 3px;
+    background: repeating-linear-gradient(90deg, var(--color-board-amber) 0 28px, transparent 28px 52px);
+    opacity: 0.5;
+}
+
+.curtain-bus {
+    position: absolute;
+    left: calc(50% - var(--bus-w) / 2);
+    top: calc(50% - var(--bus-w) * 110 / 260 / 2);
+    width: var(--bus-w);
+    filter: drop-shadow(0 10px 18px rgb(0 0 0 / 0.18));
+}
+
+.curtain-bus svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
 }
 
 @keyframes curtain-failsafe {

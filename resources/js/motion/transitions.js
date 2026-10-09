@@ -1,11 +1,15 @@
 import { gsap } from 'gsap';
 
 let curtain = null;
+let parts = null;
 let safety = null;
+let idle = null;
 
 /**
- * Page-transition wipe. The curtain is in the HTML covering the page; this slides
- * it away on load and back in before following a same-site link.
+ * Page transition. The curtain is in the HTML: the page behind it blurred and a
+ * bus parked mid-screen. On load the bus pulls away to the right as the blur
+ * clears; before following a same-site link it drives in from the left and
+ * pulls up in the middle while the page blurs.
  *
  * Skipped (normal navigation): new tabs, modified clicks, downloads, exports,
  * in-page anchors, other sites, and anything another handler already prevented.
@@ -21,6 +25,15 @@ export function initTransitions(enabled) {
         gsap.set(curtain, { autoAlpha: 0 });
         return null;
     }
+
+    parts = {
+        blur: curtain.querySelector('[data-curtain-blur]'),
+        road: curtain.querySelector('[data-curtain-road]'),
+        bus: curtain.querySelector('[data-curtain-bus]'),
+        body: curtain.querySelector('[data-curtain-body]'),
+        wheels: curtain.querySelectorAll('[data-curtain-wheel]'),
+        trail: curtain.querySelector('[data-curtain-trail]'),
+    };
 
     document.addEventListener('click', onClick);
 
@@ -39,33 +52,78 @@ export function disableTransitions() {
 }
 
 export function enableTransitions() {
-    if (!curtain) return;
+    if (!curtain || !parts) return;
     document.removeEventListener('click', onClick);
     document.addEventListener('click', onClick);
 }
 
-function reveal(duration = 0.65) {
-    clearTimeout(safety);
-    const logo = curtain.querySelector('[data-curtain-logo]');
+/** Distance from the parked spot to just past either edge of the screen. */
+const offscreen = () => window.innerWidth / 2 + parts.bus.offsetWidth / 2 + 40;
 
-    return gsap.timeline()
-        .set(curtain, { autoAlpha: 1, xPercent: 0 })
-        .to(logo, { scale: 0.85, autoAlpha: 0, duration: Math.min(duration, 0.2), ease: 'power2.in' })
-        .to(curtain, { xPercent: 100, duration, ease: 'expo.inOut' }, '<0.05')
-        .set(curtain, { autoAlpha: 0 });
+function spinWheels(turnsPerSecond) {
+    gsap.killTweensOf(parts.wheels);
+    if (!turnsPerSecond) return;
+    gsap.to(parts.wheels, { rotation: '+=360', transformOrigin: '50% 50%', duration: 1 / turnsPerSecond, ease: 'none', repeat: -1 });
+}
+
+function stopIdle() {
+    idle?.kill();
+    idle = null;
+    gsap.set(parts.body, { y: 0 });
+}
+
+function reveal(duration = 0.8) {
+    clearTimeout(safety);
+    stopIdle();
+
+    if (!duration) {
+        spinWheels(0);
+        gsap.set(curtain, { autoAlpha: 0 });
+        return null;
+    }
+
+    spinWheels(3);
+
+    return gsap.timeline({ onComplete: () => spinWheels(0) })
+        .set(curtain, { autoAlpha: 1 })
+        .set(parts.bus, { x: 0 })
+        .set(parts.trail, { opacity: 0.35, x: 0 })
+        // Squat back as it pulls away, then level out.
+        .fromTo(parts.body, { rotation: -2, transformOrigin: '30% 100%' }, { rotation: 0, duration: 0.4, ease: 'power2.out' }, 0)
+        .to(parts.bus, { x: offscreen, duration, ease: 'power2.in' }, 0)
+        .to(parts.blur, { opacity: 0, duration: duration * 0.8, ease: 'power1.inOut' }, duration * 0.2)
+        .to(parts.road, { opacity: 0, duration: duration * 0.6 }, duration * 0.3)
+        .set(curtain, { autoAlpha: 0 })
+        .set([parts.blur, parts.road], { clearProps: 'opacity' });
 }
 
 function leave(go) {
-    const logo = curtain.querySelector('[data-curtain-logo]');
+    stopIdle();
+    spinWheels(3.5);
 
-    gsap.timeline({ onComplete: go })
-        .set(curtain, { autoAlpha: 1, xPercent: -100 })
-        .set(logo, { autoAlpha: 0, scale: 0.85 })
-        .to(curtain, { xPercent: 0, duration: 0.45, ease: 'expo.in' })
-        .to(logo, { autoAlpha: 1, scale: 1, duration: 0.25, ease: 'back.out(2)' }, '-=0.08');
+    gsap.timeline({
+        onComplete: () => {
+            spinWheels(0.6);
+            // Engine running at the stop while the next page loads.
+            idle = gsap.to(parts.body, { y: -1, duration: 0.12, ease: 'sine.inOut', repeat: -1, yoyo: true });
+            go();
+        },
+    })
+        .set(curtain, { autoAlpha: 1 })
+        .set(parts.bus, { x: () => -offscreen() })
+        .set(parts.blur, { opacity: 0 })
+        .set(parts.road, { opacity: 0 })
+        .set(parts.body, { rotation: 0, transformOrigin: '70% 100%' })
+        .to(parts.blur, { opacity: 1, duration: 0.45, ease: 'power1.out' }, 0)
+        .to(parts.road, { opacity: 0.5, duration: 0.3 }, 0.05)
+        .to(parts.bus, { x: 0, duration: 0.6, ease: 'power3.out' }, 0)
+        .to(parts.trail, { opacity: 0, x: 10, duration: 0.3 }, 0.35)
+        // Nose dips as it brakes, then settles.
+        .to(parts.body, { rotation: 1.5, duration: 0.18, ease: 'power1.out' }, 0.42)
+        .to(parts.body, { rotation: 0, duration: 0.35, ease: 'back.out(3)' }, 0.6);
 
-    // If the browser stays on this page (e.g. the link was a file download), open up again.
-    safety = setTimeout(() => reveal(0.5), 5000);
+    // If the browser stays on this page (e.g. the link was a file download), drive on again.
+    safety = setTimeout(() => reveal(0.7), 5000);
 }
 
 function onClick(event) {
